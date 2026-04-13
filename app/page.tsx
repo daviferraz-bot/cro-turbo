@@ -340,7 +340,13 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: url.trim() }),
       })
-      const data = await res.json()
+      const text = await res.text()
+      let data: AnaliseResult & { error?: string }
+      try {
+        data = JSON.parse(text)
+      } catch {
+        throw new Error('A análise demorou mais que o esperado. Tente novamente.')
+      }
       if (!res.ok) throw new Error(data.error ?? 'Erro desconhecido')
       setResult(data)
       setView('results')

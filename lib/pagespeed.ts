@@ -50,30 +50,18 @@ export async function analisarPageSpeed(url: string): Promise<PageSpeedResult> {
   const mScore = Math.round((mobile.lighthouseResult?.categories?.performance?.score ?? 0) * 100)
   const dScore = Math.round((desktop.lighthouseResult?.categories?.performance?.score ?? 0) * 100)
 
-  // DEBUG temporário — inspecionar estrutura do full-page-screenshot
   const fpAudit = mAudits['full-page-screenshot']
   const fpTopLevel = mobile.lighthouseResult?.fullPageScreenshot
-  console.log('[PSI DEBUG] audit keys com "screenshot":', Object.keys(mAudits).filter(k => k.includes('screenshot')))
-  console.log('[PSI DEBUG] full-page-screenshot (audit) details keys:', Object.keys(fpAudit?.details ?? {}))
-  console.log('[PSI DEBUG] full-page-screenshot (audit) screenshot.data?', !!(fpAudit?.details?.screenshot?.data))
-  console.log('[PSI DEBUG] fullPageScreenshot (top-level) screenshot.data?', !!(fpTopLevel?.screenshot?.data))
-  console.log('[PSI DEBUG] final-screenshot data?', !!(mAudits['final-screenshot']?.details?.data))
 
   // Tenta full-page-screenshot — 3 caminhos possíveis no PSI API
-  // Caminho 1: lighthouseResult.fullPageScreenshot.screenshot.data (algumas versões do Lighthouse)
-  // Caminho 2: audits['full-page-screenshot'].details.screenshot.data
-  // Fallback: audits['final-screenshot'].details.data (só primeira dobra)
   let screenshotDataUrl: string | undefined
 
   if (fpTopLevel?.screenshot?.data) {
     screenshotDataUrl = fpTopLevel.screenshot.data
-    console.log('[PSI DEBUG] Usando fullPageScreenshot top-level ✅')
   } else if (fpAudit?.details?.screenshot?.data) {
     screenshotDataUrl = fpAudit.details.screenshot.data
-    console.log('[PSI DEBUG] Usando full-page-screenshot audit ✅')
   } else {
     screenshotDataUrl = mAudits['final-screenshot']?.details?.data
-    console.log('[PSI DEBUG] Usando final-screenshot (fallback) ⚠️')
   }
 
   let screenshot: string | undefined
