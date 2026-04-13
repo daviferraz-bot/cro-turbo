@@ -1,5 +1,36 @@
 import Anthropic from '@anthropic-ai/sdk'
+import sharp from 'sharp'
 import type { CroResult } from './types'
+
+const MAX_IMAGE_DIMENSION = 7800 // Claude aceita até 8000px, margem de segurança
+
+async function redimensionarSeNecessario(base64: string, mime: string): Promise<{ data: string; mime: string }> {
+  try {
+    const buffer = Buffer.from(base64, 'base64')
+    const metadata = await sharp(buffer).metadata()
+    const { width = 0, height = 0 } = metadata
+
+    if (width <= MAX_IMAGE_DIMENSION && height <= MAX_IMAGE_DIMENSION) {
+      return { data: base64, mime }
+    }
+
+    // Redimensiona mantendo proporção, limitando a maior dimensão
+    const resized = await sharp(buffer)
+      .resize({
+        width: width > height ? MAX_IMAGE_DIMENSION : undefined,
+        height: height >= width ? MAX_IMAGE_DIMENSION : undefined,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .jpeg({ quality: 80 })
+      .toBuffer()
+
+    return { data: resized.toString('base64'), mime: 'image/jpeg' }
+  } catch {
+    // Se falhar o resize, retorna original e deixa o Claude tentar
+    return { data: base64, mime }
+  }
+}
 
 const SYSTEM_PROMPT = `Você é um especialista sênior em Conversion Rate Optimization (CRO) com 10+ anos de experiência em e-commerce e marketing digital no mercado brasileiro. Já auditou mais de 500 páginas e entrega laudos usados tanto por equipes técnicas quanto por diretores de negócio.
 
@@ -107,11 +138,13 @@ export async function analisarCRO(
   const content: Anthropic.MessageParam['content'] = []
 
   if (screenshotBase64) {
-    // Claude suporta image/jpeg, image/png, image/gif, image/webp
+    // Redimensiona se ultrapassar 8000px (limite da API Claude)
+    const resized = await redimensionarSeNecessario(screenshotBase64, screenshotMime)
+
     const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const
     type ValidMime = typeof validMimes[number]
-    const mime: ValidMime = validMimes.includes(screenshotMime as ValidMime)
-      ? (screenshotMime as ValidMime)
+    const mime: ValidMime = validMimes.includes(resized.mime as ValidMime)
+      ? (resized.mime as ValidMime)
       : 'image/jpeg'
 
     content.push({
@@ -119,7 +152,7 @@ export async function analisarCRO(
       source: {
         type: 'base64',
         media_type: mime,
-        data: screenshotBase64,
+        data: resized.data,
       },
     })
   }
