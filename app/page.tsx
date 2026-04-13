@@ -328,33 +328,63 @@ export default function Home() {
     }
   }, [view])
 
+  const [retryCount, setRetryCount] = useState(0)
+  const MAX_RETRIES = 2
+
+  async function tentarAnalise(urlToAnalyze: string): Promise<AnaliseResult> {
+    const res = await fetch('/api/analisar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: urlToAnalyze }),
+    })
+    const text = await res.text()
+    let data: AnaliseResult & { error?: string }
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error('TIMEOUT')
+    }
+    if (!res.ok) throw new Error(data.error ?? 'Erro desconhecido')
+    return data
+  }
+
   async function analisar(e: React.FormEvent) {
     e.preventDefault()
     if (!url.trim()) return
     setError('')
+    setRetryCount(0)
     setActiveTab('design')
     setView('loading')
-    try {
-      const res = await fetch('/api/analisar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
-      })
-      const text = await res.text()
-      let data: AnaliseResult & { error?: string }
+
+    const trimmedUrl = url.trim()
+    let lastError: Error | null = null
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        data = JSON.parse(text)
-      } catch {
-        throw new Error('A análise demorou mais que o esperado. Tente novamente.')
+        if (attempt > 0) {
+          setRetryCount(attempt)
+          // Reset loading animation para o usuário ver que está tentando de novo
+          setStep(0)
+          setAiMsg(0)
+        }
+        const data = await tentarAnalise(trimmedUrl)
+        setResult(data)
+        setView('results')
+        topRef.current?.scrollIntoView({ behavior: 'smooth' })
+        return
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err : new Error('Erro desconhecido')
+        if (lastError.message !== 'TIMEOUT' || attempt === MAX_RETRIES) break
+        // Timeout — vai tentar de novo no próximo loop
       }
-      if (!res.ok) throw new Error(data.error ?? 'Erro desconhecido')
-      setResult(data)
-      setView('results')
-      topRef.current?.scrollIntoView({ behavior: 'smooth' })
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Não conseguimos analisar esse endereço. Tente novamente.')
-      setView('input')
     }
+
+    const msg = lastError?.message === 'TIMEOUT'
+      ? 'A análise não conseguiu ser concluída após várias tentativas. O site pode estar demorando para responder. Tente novamente em alguns minutos.'
+      : lastError?.message ?? 'Não conseguimos analisar esse endereço. Tente novamente.'
+    setError(msg)
+    setRetryCount(0)
+    setView('input')
   }
 
   function novaAnalise() {
@@ -766,7 +796,13 @@ export default function Home() {
           </div>
 
           <p className="mt-6 text-center text-xs text-[#3C4150]">
-            Análise completa em até 60 segundos. Não feche a janela
+            {retryCount > 0 ? (
+              <span className="text-[#F59E0B]">
+                ⏳ Tentativa {retryCount + 1} de {MAX_RETRIES + 1} — o site demorou para responder, tentando novamente...
+              </span>
+            ) : (
+              'Análise completa em até 60 segundos. Não feche a janela'
+            )}
           </p>
         </div>
       </div>
