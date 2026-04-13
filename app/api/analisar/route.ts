@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         ttfb: 'N/A',
         speed_index: 'N/A',
         screenshot: undefined,
+        screenshotMime: undefined,
       })),
       analisarCodigo(normalizedUrl).catch(() => ({
         score: 0,
