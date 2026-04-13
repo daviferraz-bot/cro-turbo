@@ -4,7 +4,7 @@ import { analisarCodigo } from '@/lib/codigo'
 import { analisarCRO } from '@/lib/cro'
 import type { AnaliseResult } from '@/lib/types'
 
-export const maxDuration = 120 // segundos
+export const maxDuration = 60 // segundos (máximo no plano Hobby da Vercel)
 
 export async function POST(req: NextRequest) {
   try {

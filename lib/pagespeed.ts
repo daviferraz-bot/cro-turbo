@@ -31,7 +31,7 @@ function formatMs(ms: number | undefined): string {
 }
 
 async function fetchPSI(url: string, strategy: 'mobile' | 'desktop'): Promise<PSIResponse> {
-  const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY
+  const apiKey = process.env.PAGESPEED_API_KEY
   const endpoint = `${PSI_BASE}?url=${encodeURIComponent(url)}&strategy=${strategy}${apiKey ? `&key=${apiKey}` : ''}`
   const res = await fetch(endpoint, { next: { revalidate: 0 } })
   if (!res.ok) throw new Error(`PageSpeed API error: ${res.status}`)
