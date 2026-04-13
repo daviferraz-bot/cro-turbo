@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark: #0B0726;
+  --color-dark-2: #100C35;
+  --color-blue: #1D1E6C;
+  --color-accent: #415FF2;
+  --color-accent-hover: #3451D1;
+  --color-green: #37D3A4;
+  --color-green-hover: #2BB88E;
+  --color-ice: #F7F9F9;
+  --color-gray-500: #9398A1;
+  --color-gray-600: #6D727C;
+  --color-gray-700: #3C4150;
+  --color-gray-800: #1C202B;
+  --font-jakarta: 'Plus Jakarta Sans', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-dark);
+  color: var(--color-ice);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+/* Score ring animation */
+@keyframes ring-fill {
+  from { stroke-dashoffset: 282; }
+  to { stroke-dashoffset: var(--target-offset); }
+}
+
+.score-ring {
+  animation: ring-fill 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Fade in up */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+
+/* Pulse dot */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+/* Accordion */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+
+/* Marquee scroll */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 28s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+
+/* Glow pulse */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.08); }
+}
+.glow-orb {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #37D3A4 0%, #415FF2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #100C35; }
+::-webkit-scrollbar-thumb { background: #415FF2; border-radius: 3px; }
