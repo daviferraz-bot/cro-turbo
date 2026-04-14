@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'URL inválida. Verifique o endereço digitado.' }, { status: 400 })
     }
 
-    // Roda PageSpeed (só mobile) e análise de código em paralelo
-    const [pagespeed, codigo] = await Promise.all([
+    // Roda TUDO em paralelo — PageSpeed, código e CRO ao mesmo tempo
+    // CRO roda sem screenshot (analisa pela URL) para não depender do PageSpeed
+    const [pagespeed, codigo, cro] = await Promise.all([
       analisarPageSpeed(normalizedUrl).catch(() => ({
         mobile_score: 0,
         lcp: 'N/A',
@@ -48,13 +49,14 @@ export async function POST(req: NextRequest) {
         score: 0,
         checks: [],
       })),
+      analisarCRO(normalizedUrl, tipo_pagina).catch(() => null),
     ])
 
-    // Análise de CRO com tipo declarado + screenshot das primeiras dobras
-    const cro = await analisarCRO(normalizedUrl, tipo_pagina, pagespeed.screenshot, pagespeed.screenshotMime)
+    // Se CRO falhou, tenta de novo (agora com screenshot se PageSpeed terminou)
+    const croResult = cro ?? await analisarCRO(normalizedUrl, tipo_pagina, pagespeed.screenshot, pagespeed.screenshotMime)
 
     // Score final ponderado: CRO 50% + PageSpeed Mobile 30% + Código 20%
-    const score_final = Math.round(cro.score_geral * 0.5 + pagespeed.mobile_score * 0.3 + codigo.score * 0.2)
+    const score_final = Math.round(croResult.score_geral * 0.5 + pagespeed.mobile_score * 0.3 + codigo.score * 0.2)
 
     const result: AnaliseResult = {
       url: normalizedUrl,
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
       screenshotMime: pagespeed.screenshotMime,
       pagespeed,
       codigo,
-      cro,
+      cro: croResult,
       score_final,
       analisado_em: new Date().toISOString(),
     }
