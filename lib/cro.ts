@@ -19,7 +19,9 @@ CONTEXTO DO MERCADO BRASILEIRO:
 - Mobile-first: 60%+ do tráfego brasileiro é mobile
 - WhatsApp é canal de conversão relevante
 
-FOCO DA ANÁLISE: Analise especificamente as PRIMEIRAS DUAS DOBRAS (above the fold + primeira rolagem). É onde 100% dos visitantes chegam e onde a decisão de ficar ou sair acontece.`
+FOCO DA ANÁLISE: Analise especificamente as PRIMEIRAS DUAS DOBRAS (above the fold + primeira rolagem). É onde 100% dos visitantes chegam e onde a decisão de ficar ou sair acontece.
+
+REGRA SOBRE POPUPS: Se houver algum popup visível no screenshot (cookie banner, captura de e-mail, promoção, WhatsApp widget, etc.), IGNORE-O completamente. Analise apenas a página por trás do popup. Popups não fazem parte da estrutura fixa da página e não devem ser considerados como elementos de CRO na análise. Não mencione popups nos problemas ou melhorias.`
 
   const tipoEspecifico: Record<TipoPagina, string> = {
     homepage: `
