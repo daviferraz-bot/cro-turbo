@@ -1048,10 +1048,8 @@ export default function Home() {
             <div className="hidden lg:block sticky top-[73px] mb-8 lg:mb-0">
 
               {result.screenshot ? (
-                <div
-                  className="rounded-3xl border border-[#1C202B] bg-[#100C35] overflow-hidden shadow-2xl flex flex-col"
-                  style={{ height: 'calc(100vh - 73px - 2rem)' }}
-                >
+                <div className="rounded-3xl border border-[#1C202B] bg-[#100C35] overflow-hidden shadow-2xl flex flex-col"
+                  style={{ height: 'calc(100vh - 73px - 2rem)' }}>
                   {/* Barra do browser */}
                   <div className="flex-shrink-0 flex items-center gap-2.5 px-4 py-2.5 border-b border-[#1C202B]">
                     <div className="flex gap-1.5">
@@ -1061,13 +1059,17 @@ export default function Home() {
                     </div>
                     <span className="text-xs text-[#6D727C] truncate">{result.url}</span>
                   </div>
-                  {/* Área da imagem com scroll interno */}
-                  <div className="flex-1 overflow-y-auto min-h-0">
+                  {/* Imagem com scroll interno — mostra as 3 dobras */}
+                  <div className="flex-1 overflow-y-auto min-h-0 scroll-smooth"
+                    style={{ scrollbarWidth: 'thin' }}>
                     <img
                       src={`data:${result.screenshotMime ?? 'image/jpeg'};base64,${result.screenshot}`}
                       alt="Como seu site está aparecendo agora"
-                      className="w-full"
+                      className="w-full block"
                     />
+                  </div>
+                  <div className="flex-shrink-0 flex items-center justify-center gap-1.5 py-2 border-t border-[#1C202B]">
+                    <span className="text-[10px] text-[#3C4150]">↕ Role para ver as 3 dobras</span>
                   </div>
                 </div>
               ) : (

@@ -72,7 +72,7 @@ export async function capturarScreenshot(url: string): Promise<{ base64: string;
       args: chromium.args,
       defaultViewport: {
         width: 390,
-        height: 1688,
+        height: 2532,
         isMobile: true,
         deviceScaleFactor: 2,
       },
@@ -110,7 +110,7 @@ export async function capturarScreenshot(url: string): Promise<{ base64: string;
         x: 0,
         y: 0,
         width: 390,
-        height: 1688,
+        height: 2532,
       },
     })
 
