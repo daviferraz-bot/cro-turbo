@@ -891,11 +891,17 @@ export default function Home() {
                   className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
                 >
                   <option value="" disabled>Seu nicho</option>
-                  <option value="ecommerce">E-commerce</option>
-                  <option value="servicos">Serviços</option>
-                  <option value="saas">SaaS</option>
-                  <option value="educacao">Educação</option>
-                  <option value="saude">Saúde</option>
+                  <option value="moda">Moda e Vestuário</option>
+                  <option value="cosmeticos">Cosméticos e Beleza</option>
+                  <option value="suplementos">Suplementos e Saúde</option>
+                  <option value="alimentos">Alimentos e Bebidas</option>
+                  <option value="casa_decoracao">Casa e Decoração</option>
+                  <option value="pet">Pet</option>
+                  <option value="dnvb">DNVB / Marca própria D2C</option>
+                  <option value="eletronicos">Eletrônicos e Acessórios</option>
+                  <option value="joias_acessorios">Joias e Acessórios</option>
+                  <option value="infantil">Infantil e Bebê</option>
+                  <option value="esporte">Esporte e Fitness</option>
                   <option value="outro">Outro</option>
                 </select>
                 <select
@@ -912,16 +918,10 @@ export default function Home() {
                 </select>
               </div>
 
-              <div className="flex gap-3 mt-6">
-                <button onClick={handleLeadSubmit}
-                  className="flex-1 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25">
-                  Continuar
-                </button>
-                <button onClick={() => setShowLeadPopup(false)}
-                  className="rounded-xl border border-[#1C202B] hover:border-[#6D727C] text-[#6D727C] hover:text-white font-bold px-5 py-3.5 text-sm transition-all">
-                  Pular
-                </button>
-              </div>
+              <button onClick={handleLeadSubmit}
+                className="w-full mt-6 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25">
+                Continuar
+              </button>
             </div>
           </div>
         )}
