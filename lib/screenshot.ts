@@ -72,7 +72,7 @@ export async function capturarScreenshot(url: string): Promise<{ base64: string;
       args: chromium.args,
       defaultViewport: {
         width: 390,
-        height: 2532,
+        height: 844,   // viewport normal de 1 dobra — o site renderiza naturalmente
         isMobile: true,
         deviceScaleFactor: 2,
       },
@@ -99,13 +99,19 @@ export async function capturarScreenshot(url: string): Promise<{ base64: string;
     // Remove popups
     await page.evaluate(DISMISS_SCRIPT)
 
-    // Espera 500ms para o layout se reajustar
-    await new Promise(r => setTimeout(r, 500))
+    // Scrola até 3 dobras para forçar lazy-loading das imagens abaixo do fold
+    await page.evaluate(() => window.scrollTo({ top: 2532, behavior: 'instant' }))
+    await new Promise(r => setTimeout(r, 800))
 
-    // Tira screenshot do viewport (primeira dobra)
+    // Volta ao topo para capturar do início
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+    await new Promise(r => setTimeout(r, 300))
+
+    // Captura página inteira e corta nas 3 dobras (2532px CSS = 5064px com 2x scale)
     const buffer = await page.screenshot({
       type: 'jpeg',
       quality: 85,
+      fullPage: false,
       clip: {
         x: 0,
         y: 0,
