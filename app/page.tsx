@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import type { AnaliseResult, CroMelhoria, CroProblema, CodigoCheck } from '@/lib/types'
+import type { AnaliseResult, CroMelhoria, CroProblema, CodigoCheck, TipoPagina, LeadData } from '@/lib/types'
 
 type View = 'input' | 'loading' | 'results'
 type Tab = 'design' | 'codigo' | 'speed'
@@ -53,8 +53,8 @@ function scoreFrase(s: number) {
 
 // ── CTA contextual com cases reais da Turbo ──────────────────────────────────
 function getCtaContextual(result: AnaliseResult) {
-  const psAvg = (result.pagespeed.mobile_score + result.pagespeed.desktop_score) / 2
-  if (psAvg < 40 && result.codigo.score < 50) return {
+  const mobileScore = result.pagespeed.mobile_score
+  if (mobileScore < 40 && result.codigo.score < 50) return {
     titulo: 'Seu site precisa de uma base nova',
     desc: 'A Cristal Graffiti também precisava. Reconstruímos a loja do zero e em 2 meses cresceram 226%. Às vezes recomeçar custa menos do que corrigir.',
     servico: 'Novo site ou e-commerce',
@@ -292,6 +292,13 @@ export default function Home() {
   const aiTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const topRef = useRef<HTMLDivElement>(null)
 
+  // Popup de tipo de página
+  const [showTipoPopup, setShowTipoPopup] = useState(false)
+
+  // Popup de lead (durante loading)
+  const [showLeadPopup, setShowLeadPopup] = useState(false)
+  const [leadData, setLeadData] = useState<LeadData>({ nome: '', telefone: '', nicho: '', faturamento: '' })
+
   useEffect(() => {
     if (view === 'loading') {
       setStep(0)
@@ -331,11 +338,11 @@ export default function Home() {
   const [retryCount, setRetryCount] = useState(0)
   const MAX_RETRIES = 2
 
-  async function tentarAnalise(urlToAnalyze: string): Promise<AnaliseResult> {
+  async function tentarAnalise(urlToAnalyze: string, tipo: TipoPagina): Promise<AnaliseResult> {
     const res = await fetch('/api/analisar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: urlToAnalyze }),
+      body: JSON.stringify({ url: urlToAnalyze, tipo_pagina: tipo }),
     })
     const text = await res.text()
     let data: AnaliseResult & { error?: string }
@@ -348,13 +355,23 @@ export default function Home() {
     return data
   }
 
-  async function analisar(e: React.FormEvent) {
+  // Quando o usuário clica no botão do formulário, abre o popup de tipo
+  function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!url.trim()) return
     setError('')
+    setShowTipoPopup(true)
+  }
+
+  // Quando o usuário seleciona o tipo, inicia a análise + abre lead popup com delay
+  async function iniciarAnalise(tipo: TipoPagina) {
+    setShowTipoPopup(false)
     setRetryCount(0)
     setActiveTab('design')
     setView('loading')
+
+    // Mostra popup de lead após 3s (enquanto a análise roda por trás)
+    setTimeout(() => setShowLeadPopup(true), 3000)
 
     const trimmedUrl = url.trim()
     let lastError: Error | null = null
@@ -363,11 +380,11 @@ export default function Home() {
       try {
         if (attempt > 0) {
           setRetryCount(attempt)
-          // Reset loading animation para o usuário ver que está tentando de novo
           setStep(0)
           setAiMsg(0)
         }
-        const data = await tentarAnalise(trimmedUrl)
+        const data = await tentarAnalise(trimmedUrl, tipo)
+        setShowLeadPopup(false)
         setResult(data)
         setView('results')
         topRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -375,7 +392,6 @@ export default function Home() {
       } catch (err: unknown) {
         lastError = err instanceof Error ? err : new Error('Erro desconhecido')
         if (lastError.message !== 'TIMEOUT' || attempt === MAX_RETRIES) break
-        // Timeout — vai tentar de novo no próximo loop
       }
     }
 
@@ -384,7 +400,13 @@ export default function Home() {
       : lastError?.message ?? 'Não conseguimos analisar esse endereço. Tente novamente.'
     setError(msg)
     setRetryCount(0)
+    setShowLeadPopup(false)
     setView('input')
+  }
+
+  function handleLeadSubmit() {
+    console.log('[LEAD CAPTURADO]', { ...leadData, url, timestamp: new Date().toISOString() })
+    setShowLeadPopup(false)
   }
 
   function novaAnalise() {
@@ -437,7 +459,7 @@ export default function Home() {
         </p>
 
         {/* Form */}
-        <form onSubmit={analisar} className="relative mt-9 w-full max-w-2xl">
+        <form onSubmit={handleFormSubmit} className="relative mt-9 w-full max-w-2xl">
           <div className="rounded-2xl border border-[#1C202B] bg-[#100C35]/80 backdrop-blur p-2 flex flex-col sm:flex-row gap-2 shadow-2xl shadow-black/40">
             <div className="flex-1 flex items-center gap-3 px-4">
               <svg className="w-5 h-5 text-[#6D727C] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -705,6 +727,42 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* ── POPUP: TIPO DE PÁGINA ── */}
+      {showTipoPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-3xl border border-[#1C202B] bg-[#0E0B30] p-8 shadow-2xl">
+            <button onClick={() => setShowTipoPopup(false)} className="absolute top-4 right-4 text-[#6D727C] hover:text-white text-xl transition-colors">✕</button>
+
+            <div className="text-center mb-8">
+              <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest mb-3">Antes de começar</p>
+              <h2 className="text-2xl font-extrabold text-white leading-tight">Qual é essa página?</h2>
+              <p className="text-sm text-[#9398A1] mt-2">A análise muda de acordo com o tipo. Isso garante um diagnóstico mais preciso.</p>
+            </div>
+
+            <div className="space-y-3">
+              {([
+                { tipo: 'homepage' as TipoPagina, icon: '🏠', label: 'Homepage', desc: 'Página principal do site ou empresa' },
+                { tipo: 'produto' as TipoPagina, icon: '🛍', label: 'Página de Produto', desc: 'Produto específico ou página de loja' },
+                { tipo: 'landing_page' as TipoPagina, icon: '🎯', label: 'Landing Page', desc: 'Página de captura, oferta ou campanha' },
+              ]).map(opt => (
+                <button
+                  key={opt.tipo}
+                  onClick={() => iniciarAnalise(opt.tipo)}
+                  className="w-full flex items-center gap-4 rounded-2xl border border-[#1C202B] bg-[#100C35] hover:border-[#415FF2]/50 hover:bg-[#415FF2]/8 px-6 py-5 text-left transition-all group"
+                >
+                  <span className="text-3xl flex-shrink-0">{opt.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-white text-base group-hover:text-[#415FF2] transition-colors">{opt.label}</p>
+                    <p className="text-xs text-[#6D727C] mt-0.5">{opt.desc}</p>
+                  </div>
+                  <span className="text-[#6D727C] group-hover:text-[#415FF2] transition-colors text-sm">→</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 
@@ -805,6 +863,68 @@ export default function Home() {
             )}
           </p>
         </div>
+
+        {/* ── POPUP: LEAD CAPTURE (durante loading) ── */}
+        {showLeadPopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <div className="relative w-full max-w-md rounded-3xl border border-[#1C202B] bg-[#0E0B30] p-8 shadow-2xl">
+              <div className="text-center mb-6">
+                <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest mb-2">Enquanto a IA trabalha</p>
+                <h2 className="text-xl font-extrabold text-white leading-tight">Quer receber o diagnóstico completo?</h2>
+                <p className="text-sm text-[#9398A1] mt-2">Preencha abaixo para receber recomendações personalizadas.</p>
+              </div>
+
+              <div className="space-y-3">
+                <input
+                  type="text" placeholder="Seu nome" value={leadData.nome}
+                  onChange={e => setLeadData(d => ({ ...d, nome: e.target.value }))}
+                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
+                />
+                <input
+                  type="tel" placeholder="WhatsApp (com DDD)" value={leadData.telefone}
+                  onChange={e => setLeadData(d => ({ ...d, telefone: e.target.value }))}
+                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
+                />
+                <select
+                  value={leadData.nicho}
+                  onChange={e => setLeadData(d => ({ ...d, nicho: e.target.value }))}
+                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
+                >
+                  <option value="" disabled>Seu nicho</option>
+                  <option value="ecommerce">E-commerce</option>
+                  <option value="servicos">Serviços</option>
+                  <option value="saas">SaaS</option>
+                  <option value="educacao">Educação</option>
+                  <option value="saude">Saúde</option>
+                  <option value="outro">Outro</option>
+                </select>
+                <select
+                  value={leadData.faturamento}
+                  onChange={e => setLeadData(d => ({ ...d, faturamento: e.target.value }))}
+                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
+                >
+                  <option value="" disabled>Faturamento mensal</option>
+                  <option value="ate_50k">Até R$ 50k/mês</option>
+                  <option value="50k_200k">R$ 50k – 200k/mês</option>
+                  <option value="200k_500k">R$ 200k – 500k/mês</option>
+                  <option value="500k_1m">R$ 500k – 1M/mês</option>
+                  <option value="acima_1m">Acima de R$ 1M/mês</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button onClick={handleLeadSubmit}
+                  className="flex-1 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25">
+                  Continuar
+                </button>
+                <button onClick={() => setShowLeadPopup(false)}
+                  className="rounded-xl border border-[#1C202B] hover:border-[#6D727C] text-[#6D727C] hover:text-white font-bold px-5 py-3.5 text-sm transition-all">
+                  Pular
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -812,7 +932,7 @@ export default function Home() {
   // ════ RESULTS ══════════════════════════════════════════════════════════════
   if (!result) return null
 
-  const psAvg = Math.round((result.pagespeed.mobile_score + result.pagespeed.desktop_score) / 2)
+  const mobileScore = result.pagespeed.mobile_score
   const cta = getCtaContextual(result)
 
   const checksRuins = result.codigo.checks.filter(c => !c.passou)
@@ -911,7 +1031,7 @@ export default function Home() {
               onClick={() => setActiveTab('design')} active={activeTab === 'design'} />
             <ModuleScore icon="🔧" label="Qualidade do código" sublabel="Está bem construído?" score={result.codigo.score}
               onClick={() => setActiveTab('codigo')} active={activeTab === 'codigo'} />
-            <ModuleScore icon="⚡" label="Velocidade e Performance" sublabel="Carrega rápido?" score={psAvg}
+            <ModuleScore icon="⚡" label="Velocidade e Performance" sublabel="Carrega rápido?" score={mobileScore}
               onClick={() => setActiveTab('speed')} active={activeTab === 'speed'} />
           </div>
         </div>
@@ -1124,35 +1244,30 @@ export default function Home() {
         {activeTab === 'speed' && (
           <div className="space-y-8">
 
-            {/* Scores lado a lado */}
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: '📱 No celular', score: result.pagespeed.mobile_score, sub: 'Onde está a maioria dos seus clientes' },
-                { label: '🖥 No computador', score: result.pagespeed.desktop_score, sub: 'Experiência em desktop' },
-              ].map(({ label, score, sub }) => (
-                <div key={label} className={`rounded-3xl border p-6 flex flex-col items-center text-center gap-4 ${scoreBg(score)}`}>
-                  <p className="text-sm font-bold text-white">{label}</p>
-                  <div className="relative inline-flex">
-                    <ScoreRing score={score} size={100} strokeWidth={9} />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-2xl font-extrabold text-white">{score}</span>
-                      <span className="text-xs text-[#9398A1]">/100</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm" style={{ color: scoreColor(score) }}>{scoreEmoji(score)} {score >= 80 ? 'Rápido' : score >= 60 ? 'Aceitável' : score >= 40 ? 'Lento' : 'Muito lento'}</p>
-                    <p className="text-xs text-[#9398A1] mt-1">{sub}</p>
-                  </div>
+            {/* Score mobile */}
+            <div className={`rounded-3xl border p-8 flex flex-col sm:flex-row items-center gap-6 ${scoreBg(mobileScore)}`}>
+              <div className="relative inline-flex flex-shrink-0">
+                <ScoreRing score={mobileScore} size={110} strokeWidth={10} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-extrabold text-white">{mobileScore}</span>
+                  <span className="text-xs text-[#9398A1]">/100</span>
                 </div>
-              ))}
+              </div>
+              <div>
+                <p className="text-lg font-extrabold text-white mb-1">📱 Velocidade no celular</p>
+                <p className="text-sm font-bold" style={{ color: scoreColor(mobileScore) }}>
+                  {scoreEmoji(mobileScore)} {mobileScore >= 80 ? 'Seu site é rápido!' : mobileScore >= 60 ? 'Aceitável, mas dá para melhorar' : mobileScore >= 40 ? 'Está lento para a maioria dos visitantes' : 'Muito lento — visitantes estão saindo'}
+                </p>
+                <p className="text-xs text-[#9398A1] mt-2">Medido onde 60%+ dos seus clientes estão: no celular.</p>
+              </div>
             </div>
 
             {/* Frase de impacto se lento */}
-            {psAvg < 75 && (
+            {mobileScore < 75 && (
               <div className="rounded-2xl border border-orange-500/25 bg-orange-500/5 px-6 py-5">
                 <p className="text-base font-bold text-white mb-1">⏱ Seu site está demorando para abrir</p>
                 <p className="text-sm text-[#9398A1] leading-relaxed">
-                  {psAvg < 50
+                  {mobileScore < 50
                     ? 'Sites com essa velocidade perdem mais da metade dos visitantes antes de carregar. É como abrir uma loja com a porta emperrada.'
                     : 'Sites mais rápidos convertem mais. Cada segundo a menos de carregamento pode aumentar suas vendas em até 7%.'}
                 </p>
@@ -1183,18 +1298,18 @@ export default function Home() {
                   nome="Percepção de velocidade geral" sigla="Speed Index"
                   valor={siStr} meta="menos de 3.4 segundos" bom={siBom}
                   oQueSig="Indica como o visitante percebe a velocidade do site. Quanto maior, mais tempo ele fica vendo uma página incompleta." />
-                <div className={`rounded-2xl border p-5 flex flex-col justify-center ${psAvg >= 80 ? 'border-emerald-500/20 bg-emerald-500/5' : psAvg >= 60 ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-red-400/20 bg-red-400/5'}`}>
+                <div className={`rounded-2xl border p-5 flex flex-col justify-center ${mobileScore >= 80 ? 'border-emerald-500/20 bg-emerald-500/5' : mobileScore >= 60 ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-red-400/20 bg-red-400/5'}`}>
                   <p className="text-xs text-[#9398A1] font-medium mb-2">Nota geral de velocidade</p>
-                  <p className="text-4xl font-extrabold text-white">{psAvg}<span className="text-base text-[#9398A1] font-normal">/100</span></p>
-                  <p className="text-sm font-bold mt-2" style={{ color: scoreColor(psAvg) }}>
-                    {scoreEmoji(psAvg)} {psAvg >= 80 ? 'Seu site é rápido!' : psAvg >= 60 ? 'Dá pra melhorar' : psAvg >= 40 ? 'Está lento' : 'Muito lento'}
+                  <p className="text-4xl font-extrabold text-white">{mobileScore}<span className="text-base text-[#9398A1] font-normal">/100</span></p>
+                  <p className="text-sm font-bold mt-2" style={{ color: scoreColor(mobileScore) }}>
+                    {scoreEmoji(mobileScore)} {mobileScore >= 80 ? 'Seu site é rápido!' : mobileScore >= 60 ? 'Dá pra melhorar' : mobileScore >= 40 ? 'Está lento' : 'Muito lento'}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* O que fazer */}
-            {psAvg < 85 && (
+            {mobileScore < 85 && (
               <div>
                 <p className="text-sm font-bold text-white mb-4">O que fazer para melhorar a velocidade</p>
                 <div className="space-y-3">

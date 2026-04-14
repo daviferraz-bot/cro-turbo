@@ -2,16 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { analisarPageSpeed } from '@/lib/pagespeed'
 import { analisarCodigo } from '@/lib/codigo'
 import { analisarCRO } from '@/lib/cro'
-import type { AnaliseResult } from '@/lib/types'
+import type { AnaliseResult, TipoPagina } from '@/lib/types'
 
 export const maxDuration = 60 // segundos (máximo no plano Hobby da Vercel)
 
+const TIPOS_VALIDOS: TipoPagina[] = ['homepage', 'produto', 'landing_page']
+
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json()
+    const { url, tipo_pagina } = await req.json()
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json({ error: 'URL inválida.' }, { status: 400 })
+    }
+
+    if (!tipo_pagina || !TIPOS_VALIDOS.includes(tipo_pagina)) {
+      return NextResponse.json({ error: 'Tipo de página inválido.' }, { status: 400 })
     }
 
     // Normaliza a URL
@@ -26,11 +32,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'URL inválida. Verifique o endereço digitado.' }, { status: 400 })
     }
 
-    // Roda PageSpeed e análise de código em paralelo
+    // Roda PageSpeed (só mobile) e análise de código em paralelo
     const [pagespeed, codigo] = await Promise.all([
       analisarPageSpeed(normalizedUrl).catch(() => ({
         mobile_score: 0,
-        desktop_score: 0,
         lcp: 'N/A',
         cls: 'N/A',
         fcp: 'N/A',
@@ -45,12 +50,11 @@ export async function POST(req: NextRequest) {
       })),
     ])
 
-    // Análise de CRO com o screenshot capturado pelo PageSpeed
-    const cro = await analisarCRO(normalizedUrl, pagespeed.screenshot, pagespeed.screenshotMime)
+    // Análise de CRO com tipo declarado + screenshot das primeiras dobras
+    const cro = await analisarCRO(normalizedUrl, tipo_pagina, pagespeed.screenshot, pagespeed.screenshotMime)
 
-    // Score final ponderado: CRO 50% + PageSpeed 30% + Código 20%
-    const psScore = Math.round((pagespeed.mobile_score + pagespeed.desktop_score) / 2)
-    const score_final = Math.round(cro.score_geral * 0.5 + psScore * 0.3 + codigo.score * 0.2)
+    // Score final ponderado: CRO 50% + PageSpeed Mobile 30% + Código 20%
+    const score_final = Math.round(cro.score_geral * 0.5 + pagespeed.mobile_score * 0.3 + codigo.score * 0.2)
 
     const result: AnaliseResult = {
       url: normalizedUrl,
