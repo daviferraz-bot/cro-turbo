@@ -1,6 +1,10 @@
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
 
+const FOLDS = 3
+const FOLD_HEIGHT = 844
+const CAPTURE_HEIGHT = FOLD_HEIGHT * FOLDS // 2532px
+
 // Seletores comuns de popups, modais, cookie banners e widgets
 const POPUP_SELECTORS = [
   // Cookie banners
@@ -35,30 +39,24 @@ const DISMISS_SCRIPT = `
   // 1. Remove elementos por seletores conhecidos
   const selectors = ${JSON.stringify(POPUP_SELECTORS)};
   selectors.forEach(sel => {
-    document.querySelectorAll(sel).forEach(el => {
-      el.remove();
-    });
+    document.querySelectorAll(sel).forEach(el => el.remove());
   });
 
-  // 2. Remove elementos com position fixed/sticky e z-index alto que cobrem a tela
+  // 2. Remove elementos fixed/sticky com z-index alto que cobrem a tela
   document.querySelectorAll('*').forEach(el => {
     const style = window.getComputedStyle(el);
     const pos = style.position;
     const zIndex = parseInt(style.zIndex) || 0;
     const rect = el.getBoundingClientRect();
     const coversScreen = rect.width > window.innerWidth * 0.5 && rect.height > window.innerHeight * 0.3;
-
     if ((pos === 'fixed' || pos === 'sticky') && zIndex > 100 && coversScreen) {
-      // Não remover headers/navs legítimos (geralmente no topo, altura pequena)
       const isHeader = rect.height < 100 && rect.top < 10;
       const isBottomBar = rect.height < 80 && rect.top > window.innerHeight - 100;
-      if (!isHeader && !isBottomBar) {
-        el.remove();
-      }
+      if (!isHeader && !isBottomBar) el.remove();
     }
   });
 
-  // 3. Restaura scroll no body (popups costumam travar)
+  // 3. Restaura scroll no body
   document.body.style.overflow = 'auto';
   document.body.style.position = 'static';
   document.documentElement.style.overflow = 'auto';
@@ -72,7 +70,7 @@ export async function capturarScreenshot(url: string): Promise<{ base64: string;
       args: chromium.args,
       defaultViewport: {
         width: 390,
-        height: 844,   // viewport normal de 1 dobra — o site renderiza naturalmente
+        height: FOLD_HEIGHT, // viewport normal de 1 dobra — site renderiza naturalmente
         isMobile: true,
         deviceScaleFactor: 2,
       },
@@ -82,53 +80,57 @@ export async function capturarScreenshot(url: string): Promise<{ base64: string;
 
     const page = await browser.newPage()
 
-    // User-agent mobile realista
     await page.setUserAgent(
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
     )
 
-    // Navega com timeout de 20s
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 20000,
-    })
+    // Navega e espera carregar
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 })
 
-    // Espera 2s para popups aparecerem (muitos têm delay)
+    // Espera 2s para popups aparecerem
     await new Promise(r => setTimeout(r, 2000))
 
     // Remove popups
     await page.evaluate(DISMISS_SCRIPT)
 
-    // Scrola até 3 dobras para forçar lazy-loading das imagens abaixo do fold
-    await page.evaluate(() => window.scrollTo({ top: 2532, behavior: 'instant' }))
+    // Scrola até o fim das 3 dobras para forçar lazy-loading
+    await page.evaluate((h) => window.scrollTo({ top: h, behavior: 'instant' }), CAPTURE_HEIGHT)
     await new Promise(r => setTimeout(r, 800))
 
-    // Volta ao topo para capturar do início
+    // Volta ao topo
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
     await new Promise(r => setTimeout(r, 300))
 
-    // Captura página inteira e corta nas 3 dobras (2532px CSS = 5064px com 2x scale)
+    // CORREÇÃO: expande o viewport para as 3 dobras antes de tirar o print
+    await page.setViewport({
+      width: 390,
+      height: CAPTURE_HEIGHT,
+      isMobile: true,
+      deviceScaleFactor: 2,
+    })
+
+    // Aguarda um pouco para o layout se ajustar ao novo viewport
+    await new Promise(r => setTimeout(r, 500))
+
+    // Agora o viewport abrange as 3 dobras — captura o que está visível
     const buffer = await page.screenshot({
       type: 'jpeg',
       quality: 85,
-      fullPage: false,
       clip: {
         x: 0,
         y: 0,
         width: 390,
-        height: 2532,
+        height: CAPTURE_HEIGHT,
       },
     })
 
     const base64 = Buffer.from(buffer).toString('base64')
-
     return { base64, mime: 'image/jpeg' }
+
   } catch (err) {
     console.error('Erro ao capturar screenshot:', err)
     return null
   } finally {
-    if (browser) {
-      await browser.close().catch(() => {})
-    }
+    if (browser) await browser.close().catch(() => {})
   }
 }
