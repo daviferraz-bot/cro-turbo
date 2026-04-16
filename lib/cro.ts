@@ -19,7 +19,7 @@ CONTEXTO DO MERCADO BRASILEIRO:
 - Mobile-first: 60%+ do tráfego brasileiro é mobile
 - WhatsApp é canal de conversão relevante
 
-FOCO DA ANÁLISE: Analise especificamente as PRIMEIRAS DUAS DOBRAS (above the fold + primeira rolagem). É onde 100% dos visitantes chegam e onde a decisão de ficar ou sair acontece.
+FOCO DA ANÁLISE: Analise especificamente a PRIMEIRA DOBRA (above the fold). É onde 100% dos visitantes chegam e onde a decisão de ficar ou sair acontece em menos de 8 segundos.
 
 REGRA SOBRE POPUPS: Se houver algum popup visível no screenshot (cookie banner, captura de e-mail, promoção, WhatsApp widget, etc.), IGNORE-O completamente. Analise apenas a página por trás do popup. Popups não fazem parte da estrutura fixa da página e não devem ser considerados como elementos de CRO na análise. Não mencione popups nos problemas ou melhorias.`
 
@@ -28,23 +28,22 @@ REGRA SOBRE POPUPS: Se houver algum popup visível no screenshot (cookie banner,
 TIPO DE PÁGINA: HOMEPAGE
 Benchmarks: home page boa converte 3-5% dos visitantes.
 
-CHECKLIST ESPECÍFICO — avalie cada item nas primeiras duas dobras:
-- Headline claro acima do fold com proposta de valor única (o que faz, para quem, por que é diferente)
+CHECKLIST ESPECÍFICO — avalie cada item visível na primeira dobra (above the fold):
+- Headline claro e imediato com proposta de valor única (o que faz, para quem, por que é diferente)
 - Subheadline que complementa com benefício concreto ou prova
-- CTA principal visível e com contraste adequado, copy orientado a benefício (não "Saiba mais")
-- Prova social imediata (depoimentos com nome/foto, logos de clientes, números de resultado)
+- CTA principal visível sem scroll, com contraste adequado, copy orientado a benefício (não "Saiba mais")
+- Prova social imediata acima do fold (depoimentos, logos, números de resultado)
 - Hierarquia visual clara (caminho do olho: headline → benefícios → CTA)
-- Trust Signals (certificados, garantias, CNPJ, selos de segurança)
+- Trust Signals visíveis (certificados, garantias, selos de segurança)
 - Navegação intuitiva sem excesso de opções
 - Layout e usabilidade em mobile (touch targets, fontes, espaçamento)
-- Ausência de distrações (banners concorrentes, popups, links de saída desnecessários)
-- Se tem formulário: número mínimo de campos, labels claros`,
+- Ausência de distrações acima do fold (banners, links de saída desnecessários)`,
 
     produto: `
 TIPO DE PÁGINA: PÁGINA DE PRODUTO
 Benchmarks: product page boa converte 2-4% em e-commerce.
 
-CHECKLIST ESPECÍFICO — avalie cada item nas primeiras duas dobras:
+CHECKLIST ESPECÍFICO — avalie cada item visível na primeira dobra (above the fold):
 - Imagens de produto de alta qualidade (quantidade, ângulos, zoom disponível)
 - Título descritivo e preço visíveis acima do fold
 - CTA "Comprar" / "Adicionar ao carrinho" proeminente e acima do fold
@@ -61,7 +60,7 @@ CHECKLIST ESPECÍFICO — avalie cada item nas primeiras duas dobras:
 TIPO DE PÁGINA: LANDING PAGE
 Benchmarks: landing page boa converte 5-15% dependendo do tráfego.
 
-CHECKLIST ESPECÍFICO — avalie cada item nas primeiras duas dobras:
+CHECKLIST ESPECÍFICO — avalie cada item visível na primeira dobra (above the fold):
 - Match entre headline e oferta (se o tráfego vem de anúncio, a promessa bate?)
 - CTA ÚNICO e dominante — sem links de saída, sem menu de navegação
 - Formulário com mínimo de campos possível (cada campo extra reduz conversão em ~11%)
@@ -171,7 +170,7 @@ export async function analisarCRO(
 
   content.push({
     type: 'text',
-    text: `Analise esta ${tipoLabel} aplicando o framework completo de CRO.\n\nURL: ${url}\nTipo declarado pelo dono do site: ${tipoLabel}\n\n${screenshotBase64 ? 'A imagem acima é um screenshot das primeiras dobras da página (visão mobile). Use os elementos visuais identificados para embasar cada ponto do laudo.' : 'Screenshot não disponível — analise com base na URL e contexto disponível.'}\n\nRetorne apenas o JSON conforme instruído no system prompt.`,
+    text: `Analise esta ${tipoLabel} aplicando o framework completo de CRO.\n\nURL: ${url}\nTipo declarado pelo dono do site: ${tipoLabel}\n\n${screenshotBase64 ? 'A imagem acima é um screenshot da primeira dobra da página (above the fold, visão mobile). Use os elementos visuais identificados para embasar cada ponto do laudo.' : 'Screenshot não disponível — analise com base na URL e contexto disponível.'}\n\nRetorne apenas o JSON conforme instruído no system prompt.`,
   })
 
   try {

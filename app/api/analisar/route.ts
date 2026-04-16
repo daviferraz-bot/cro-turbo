@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { analisarPageSpeed } from '@/lib/pagespeed'
 import { analisarCodigo } from '@/lib/codigo'
 import { analisarCRO } from '@/lib/cro'
-import { capturarScreenshot } from '@/lib/screenshot'
 import type { AnaliseResult, TipoPagina } from '@/lib/types'
 
 export const maxDuration = 60 // segundos (máximo no plano Hobby da Vercel)
@@ -33,9 +32,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'URL inválida. Verifique o endereço digitado.' }, { status: 400 })
     }
 
-    // Fase 1: Captura screenshot limpo (sem popups) + PageSpeed + Código em paralelo
-    const [screenshotResult, pagespeed, codigo] = await Promise.all([
-      capturarScreenshot(normalizedUrl).catch(() => null),
+    // Fase única: PageSpeed + Código em paralelo
+    const [pagespeed, codigo] = await Promise.all([
       analisarPageSpeed(normalizedUrl).catch(() => ({
         mobile_score: 0,
         lcp: 'N/A',
@@ -52,11 +50,11 @@ export async function POST(req: NextRequest) {
       })),
     ])
 
-    // Screenshot: prefere Puppeteer (limpo), fallback para PageSpeed
-    const screenshot = screenshotResult?.base64 ?? pagespeed.screenshot
-    const screenshotMime = screenshotResult?.mime ?? pagespeed.screenshotMime ?? 'image/jpeg'
+    // Screenshot da primeira dobra via PageSpeed (final-screenshot do Lighthouse)
+    const screenshot = pagespeed.screenshot
+    const screenshotMime = pagespeed.screenshotMime ?? 'image/jpeg'
 
-    // Fase 2: CRO com screenshot limpo (análise visual real)
+    // CRO com screenshot da primeira dobra
     const cro = await analisarCRO(normalizedUrl, tipo_pagina, screenshot, screenshotMime)
 
     // Score final ponderado: CRO 50% + PageSpeed Mobile 30% + Código 20%
