@@ -142,73 +142,31 @@ function ModuleScore({ icon, label, sublabel, score, onClick, active }: {
 
 // ── Problema crítico ──────────────────────────────────────────────────────────
 function ProblemaCard({ p, i }: { p: CroProblema; i: number }) {
-  const [open, setOpen] = useState(false)
   return (
-    <div className="rounded-2xl border border-red-500/20 bg-red-500/5 overflow-hidden">
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-white/5 transition-colors">
-        <span className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{i + 1}</span>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-white text-sm leading-snug">{p.titulo}</p>
-          <p className="text-xs text-red-400 mt-1 font-medium">{p.impacto.split('.')[0]}.</p>
-        </div>
-        <span className="text-[#6D727C] text-xs flex-shrink-0 mt-1">{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div className="border-t border-red-500/10 px-5 py-4 space-y-3">
-          <div>
-            <p className="text-xs font-bold text-[#9398A1] uppercase tracking-wide mb-1.5">O que identificamos</p>
-            <p className="text-sm text-white/80 leading-relaxed">{p.descricao}</p>
-          </div>
-          <div className="rounded-xl bg-red-500/10 border border-red-500/15 px-4 py-3">
-            <p className="text-xs font-bold text-red-400 mb-1">⚠ O que isso custa para o seu negócio</p>
-            <p className="text-sm text-white/80 leading-relaxed">{p.impacto}</p>
-          </div>
-          <div className="rounded-xl bg-[#0B0726] border border-[#1C202B] px-4 py-3">
-            <p className="text-xs font-bold text-[#37D3A4] mb-1">✓ O que fazer para resolver</p>
-            <p className="text-sm text-white/80 leading-relaxed">{p.como_resolver}</p>
-          </div>
-        </div>
-      )}
+    <div className="rounded-2xl border border-red-500/20 bg-red-500/5 flex items-start gap-4 px-5 py-4">
+      <span className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{i + 1}</span>
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-white text-sm leading-snug">{p.titulo}</p>
+        <p className="text-xs text-red-400 mt-1.5 leading-relaxed">{p.impacto}</p>
+      </div>
     </div>
   )
 }
 
 // ── Melhoria ──────────────────────────────────────────────────────────────────
 function MelhoriaCard({ m, i }: { m: CroMelhoria; i: number }) {
-  const [open, setOpen] = useState(false)
   return (
-    <div className="rounded-2xl border border-[#1C202B] bg-[#100C35] overflow-hidden">
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-start gap-4 px-5 py-4 text-left hover:bg-white/5 transition-colors">
-        <span className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-[#1D1E6C] text-[#37D3A4] text-xs font-bold flex items-center justify-center">{i + 1}</span>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-white text-sm leading-snug">{m.titulo}</p>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.prioridade === 'alta' ? 'bg-red-500/15 text-red-400' : m.prioridade === 'media' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-green-500/15 text-green-400'}`}>
-              {m.prioridade === 'alta' ? '🔴 Alta prioridade' : m.prioridade === 'media' ? '🟡 Média prioridade' : '🟢 Melhoria contínua'}
-            </span>
-            <span className="text-xs text-[#6D727C]">Esforço: {m.esforco}</span>
-          </div>
+    <div className="rounded-2xl border border-[#1C202B] bg-[#100C35] flex items-start gap-4 px-5 py-4">
+      <span className="flex-shrink-0 mt-0.5 w-7 h-7 rounded-full bg-[#1D1E6C] text-[#37D3A4] text-xs font-bold flex items-center justify-center">{i + 1}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.prioridade === 'alta' ? 'bg-red-500/15 text-red-400' : m.prioridade === 'media' ? 'bg-yellow-500/15 text-yellow-400' : 'bg-green-500/15 text-green-400'}`}>
+            {m.prioridade === 'alta' ? '🔴 Alta' : m.prioridade === 'media' ? '🟡 Média' : '🟢 Contínua'}
+          </span>
         </div>
-        <span className="text-[#6D727C] text-xs flex-shrink-0 mt-1">{open ? '▲' : '▼'}</span>
-      </button>
-      {open && (
-        <div className="border-t border-[#1C202B] px-5 py-4 space-y-3">
-          <div>
-            <p className="text-xs font-bold text-[#9398A1] uppercase tracking-wide mb-1.5">O que precisa ser feito</p>
-            <p className="text-sm text-white/80 leading-relaxed">{m.descricao}</p>
-          </div>
-          <div className="rounded-xl bg-[#37D3A4]/8 border border-[#37D3A4]/20 px-4 py-3">
-            <p className="text-xs font-bold text-[#37D3A4] mb-1">↑ O que melhora com isso</p>
-            <p className="text-sm text-white/80 leading-relaxed">{m.impacto}</p>
-          </div>
-          <div className="rounded-xl bg-[#0B0726] border border-[#1C202B] px-4 py-3">
-            <p className="text-xs font-bold text-[#415FF2] mb-1">→ Como implementar</p>
-            <p className="text-sm text-white/80 leading-relaxed">{m.como_implementar}</p>
-          </div>
-        </div>
-      )}
+        <p className="font-bold text-white text-sm leading-snug">{m.titulo}</p>
+        <p className="text-xs text-[#9398A1] mt-1.5 leading-relaxed">{m.impacto}</p>
+      </div>
     </div>
   )
 }
@@ -1069,7 +1027,7 @@ export default function Home() {
                     />
                   </div>
                   <div className="flex-shrink-0 flex items-center justify-center gap-1.5 py-2 border-t border-[#1C202B]">
-                    <span className="text-[10px] text-[#3C4150]">↕ Role para ver as 3 dobras</span>
+                    <span className="text-[10px] text-[#3C4150]">Primeira dobra — visão mobile</span>
                   </div>
                 </div>
               ) : (
@@ -1089,10 +1047,9 @@ export default function Home() {
               {/* Sub-scores em linguagem de negócio */}
               <div>
                 <p className="text-xs font-bold text-[#9398A1] mb-2.5 uppercase tracking-wide">Como sua página se sai em cada área</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-3 gap-2.5">
                   {[
                     { label: 'Clareza da mensagem', score: result.cro.score_proposta_valor },
-                    { label: 'Botão de ação (CTA)', score: result.cro.score_cta },
                     { label: 'Transmite confiança', score: result.cro.score_confianca },
                     { label: 'Experiência mobile', score: result.cro.score_mobile },
                   ].map(({ label, score }) => (

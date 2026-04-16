@@ -34,27 +34,20 @@ export interface CodigoResult {
 
 export interface CroProblema {
   titulo: string
-  descricao: string          // técnico: o que foi identificado
-  impacto: string            // negócio: o que isso custa em resultado
-  como_resolver: string      // específico: o que fazer para corrigir
+  impacto: string   // o que esse problema está custando em conversões
   categoria: 'design' | 'copy' | 'confianca' | 'mobile' | 'ux' | 'velocidade'
-  esforco: 'baixo' | 'medio' | 'alto'
 }
 
 export interface CroMelhoria {
   titulo: string
-  descricao: string          // técnico: o que precisa ser feito
-  impacto: string            // negócio: o que melhora com isso
-  como_implementar: string   // específico: passos concretos
+  impacto: string   // o que muda no resultado do negócio com essa melhoria
   prioridade: 'alta' | 'media' | 'baixa'
-  esforco: 'baixo' | 'medio' | 'alto'
   categoria: 'design' | 'copy' | 'confianca' | 'mobile' | 'ux' | 'velocidade'
 }
 
 export interface CroResult {
   score_geral: number
   score_proposta_valor: number
-  score_cta: number
   score_confianca: number
   score_mobile: number
   tipo_pagina: 'home' | 'produto' | 'outra'
