@@ -5,6 +5,8 @@ export interface LeadData {
   telefone: string
   nicho: string
   faturamento: string
+  desafio: string
+  investimento_marketing: string
 }
 
 export interface PageSpeedResult {

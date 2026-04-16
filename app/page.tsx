@@ -269,7 +269,8 @@ export default function Home() {
 
   // Popup de lead (durante loading)
   const [showLeadPopup, setShowLeadPopup] = useState(false)
-  const [leadData, setLeadData] = useState<LeadData>({ nome: '', telefone: '', nicho: '', faturamento: '' })
+  const [popupStep, setPopupStep] = useState<1 | 2>(1)
+  const [leadData, setLeadData] = useState<LeadData>({ nome: '', telefone: '', nicho: '', faturamento: '', desafio: '', investimento_marketing: '' })
 
   useEffect(() => {
     if (view === 'loading') {
@@ -345,7 +346,7 @@ export default function Home() {
     setView('loading')
 
     // Mostra popup de lead após 3s (enquanto a análise roda por trás)
-    setTimeout(() => setShowLeadPopup(true), 3000)
+    setTimeout(() => { setPopupStep(1); setShowLeadPopup(true) }, 3000)
 
     const trimmedUrl = url.trim()
     let lastError: Error | null = null
@@ -376,6 +377,11 @@ export default function Home() {
     setRetryCount(0)
     setShowLeadPopup(false)
     setView('input')
+  }
+
+  function handleLeadStep1() {
+    if (!leadData.nome || !leadData.telefone || !leadData.nicho || !leadData.faturamento) return
+    setPopupStep(2)
   }
 
   function handleLeadSubmit() {
@@ -857,62 +863,143 @@ export default function Home() {
 
         {/* ── POPUP: LEAD CAPTURE (durante loading) ── */}
         {showLeadPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-            <div className="relative w-full max-w-md rounded-3xl border border-[#1C202B] bg-[#0E0B30] p-8 shadow-2xl">
-              <div className="text-center mb-6">
-                <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest mb-2">Enquanto a IA trabalha</p>
-                <h2 className="text-xl font-extrabold text-white leading-tight">Quer receber o diagnóstico completo?</h2>
-                <p className="text-sm text-[#9398A1] mt-2">Preencha abaixo para receber recomendações personalizadas.</p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
+            <div className="relative w-full max-w-md rounded-3xl border border-[#1C202B] bg-[#0E0B30] shadow-2xl overflow-hidden">
+
+              {/* Barra de progresso */}
+              <div className="h-1 bg-[#1C202B]">
+                <div
+                  className="h-full bg-gradient-to-r from-[#415FF2] to-[#37D3A4] transition-all duration-500"
+                  style={{ width: popupStep === 1 ? '50%' : '100%' }}
+                />
               </div>
 
-              <div className="space-y-3">
-                <input
-                  type="text" placeholder="Seu nome" value={leadData.nome}
-                  onChange={e => setLeadData(d => ({ ...d, nome: e.target.value }))}
-                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
-                />
-                <input
-                  type="tel" placeholder="WhatsApp (com DDD)" value={leadData.telefone}
-                  onChange={e => setLeadData(d => ({ ...d, telefone: e.target.value }))}
-                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
-                />
-                <select
-                  value={leadData.nicho}
-                  onChange={e => setLeadData(d => ({ ...d, nicho: e.target.value }))}
-                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
-                >
-                  <option value="" disabled>Seu nicho</option>
-                  <option value="moda">Moda e Vestuário</option>
-                  <option value="cosmeticos">Cosméticos e Beleza</option>
-                  <option value="suplementos">Suplementos e Saúde</option>
-                  <option value="alimentos">Alimentos e Bebidas</option>
-                  <option value="casa_decoracao">Casa e Decoração</option>
-                  <option value="pet">Pet</option>
-                  <option value="dnvb">DNVB / Marca própria D2C</option>
-                  <option value="eletronicos">Eletrônicos e Acessórios</option>
-                  <option value="joias_acessorios">Joias e Acessórios</option>
-                  <option value="infantil">Infantil e Bebê</option>
-                  <option value="esporte">Esporte e Fitness</option>
-                  <option value="outro">Outro</option>
-                </select>
-                <select
-                  value={leadData.faturamento}
-                  onChange={e => setLeadData(d => ({ ...d, faturamento: e.target.value }))}
-                  className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
-                >
-                  <option value="" disabled>Faturamento mensal</option>
-                  <option value="ate_50k">Até R$ 50k/mês</option>
-                  <option value="50k_200k">R$ 50k – 200k/mês</option>
-                  <option value="200k_500k">R$ 200k – 500k/mês</option>
-                  <option value="500k_1m">R$ 500k – 1M/mês</option>
-                  <option value="acima_1m">Acima de R$ 1M/mês</option>
-                </select>
-              </div>
+              <div className="p-6 sm:p-8">
+                {/* Step indicator */}
+                <div className="flex items-center justify-between mb-5">
+                  <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest">Enquanto a IA trabalha</p>
+                  <span className="text-xs text-[#6D727C] font-medium">
+                    {popupStep === 1 ? 'Passo 1 de 2' : 'Passo 2 de 2 — quase lá!'}
+                  </span>
+                </div>
 
-              <button onClick={handleLeadSubmit}
-                className="w-full mt-6 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25">
-                Continuar
-              </button>
+                {/* ── STEP 1 ── */}
+                {popupStep === 1 && (
+                  <>
+                    <h2 className="text-xl font-extrabold text-white leading-tight mb-1">Quer receber o diagnóstico completo?</h2>
+                    <p className="text-sm text-[#9398A1] mb-5">Preencha para receber recomendações personalizadas.</p>
+
+                    <div className="space-y-3">
+                      <input
+                        type="text" placeholder="Seu nome" value={leadData.nome}
+                        onChange={e => setLeadData(d => ({ ...d, nome: e.target.value }))}
+                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
+                      />
+                      <input
+                        type="tel" placeholder="WhatsApp (com DDD)" value={leadData.telefone}
+                        onChange={e => setLeadData(d => ({ ...d, telefone: e.target.value }))}
+                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
+                      />
+                      <select
+                        value={leadData.nicho}
+                        onChange={e => setLeadData(d => ({ ...d, nicho: e.target.value }))}
+                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
+                      >
+                        <option value="" disabled>Seu nicho</option>
+                        <option value="moda">Moda e Vestuário</option>
+                        <option value="cosmeticos">Cosméticos e Beleza</option>
+                        <option value="suplementos">Suplementos e Saúde</option>
+                        <option value="alimentos">Alimentos e Bebidas</option>
+                        <option value="casa_decoracao">Casa e Decoração</option>
+                        <option value="pet">Pet</option>
+                        <option value="dnvb">DNVB / Marca própria D2C</option>
+                        <option value="eletronicos">Eletrônicos e Acessórios</option>
+                        <option value="joias_acessorios">Joias e Acessórios</option>
+                        <option value="infantil">Infantil e Bebê</option>
+                        <option value="esporte">Esporte e Fitness</option>
+                        <option value="outro">Outro</option>
+                      </select>
+                      <select
+                        value={leadData.faturamento}
+                        onChange={e => setLeadData(d => ({ ...d, faturamento: e.target.value }))}
+                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
+                      >
+                        <option value="" disabled>Faturamento mensal</option>
+                        <option value="ate_50k">Até R$ 50k/mês</option>
+                        <option value="50k_200k">R$ 50k – 200k/mês</option>
+                        <option value="200k_500k">R$ 200k – 500k/mês</option>
+                        <option value="500k_1m">R$ 500k – 1M/mês</option>
+                        <option value="acima_1m">Acima de R$ 1M/mês</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleLeadStep1}
+                      disabled={!leadData.nome || !leadData.telefone || !leadData.nicho || !leadData.faturamento}
+                      className="w-full mt-5 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100">
+                      Continuar →
+                    </button>
+                  </>
+                )}
+
+                {/* ── STEP 2 ── */}
+                {popupStep === 2 && (
+                  <>
+                    <h2 className="text-xl font-extrabold text-white leading-tight mb-1">Só mais duas perguntas rápidas</h2>
+                    <p className="text-sm text-[#9398A1] mb-5">Isso nos ajuda a preparar uma proposta personalizada para você.</p>
+
+                    {/* Desafio — cards clicáveis */}
+                    <p className="text-xs font-bold text-[#9398A1] uppercase tracking-wide mb-2.5">Qual é o seu principal desafio hoje?</p>
+                    <div className="space-y-2 mb-5">
+                      {[
+                        { value: 'baixa_conversao', icon: '📉', label: 'Minha taxa de conversão está baixa' },
+                        { value: 'site_lento', icon: '🐢', label: 'Meu site é lento e perde clientes' },
+                        { value: 'cac_alto', icon: '💸', label: 'Meu CAC está alto, difícil de escalar' },
+                        { value: 'abandono_carrinho', icon: '🛒', label: 'Muitos abandonos de carrinho' },
+                        { value: 'concorrencia', icon: '🏆', label: 'Minha concorrência está me superando' },
+                      ].map(op => (
+                        <button
+                          key={op.value}
+                          onClick={() => setLeadData(d => ({ ...d, desafio: op.value }))}
+                          className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                            leadData.desafio === op.value
+                              ? 'border-[#415FF2] bg-[#415FF2]/15 text-white'
+                              : 'border-[#1C202B] bg-[#100C35] text-[#9398A1] hover:border-[#415FF2]/40 hover:text-white'
+                          }`}
+                        >
+                          <span className="text-base flex-shrink-0">{op.icon}</span>
+                          <span>{op.label}</span>
+                          {leadData.desafio === op.value && (
+                            <span className="ml-auto text-[#37D3A4] text-xs font-bold flex-shrink-0">✓</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Investimento em marketing */}
+                    <p className="text-xs font-bold text-[#9398A1] uppercase tracking-wide mb-2.5">Quanto você investe em marketing digital por mês?</p>
+                    <select
+                      value={leadData.investimento_marketing}
+                      onChange={e => setLeadData(d => ({ ...d, investimento_marketing: e.target.value }))}
+                      className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none mb-5"
+                    >
+                      <option value="" disabled>Selecione uma faixa</option>
+                      <option value="sem_investimento">Ainda não tenho investimento fixo</option>
+                      <option value="ate_5k">Até R$ 5.000/mês</option>
+                      <option value="5k_20k">R$ 5.000 a R$ 20.000/mês</option>
+                      <option value="20k_50k">R$ 20.000 a R$ 50.000/mês</option>
+                      <option value="acima_50k">Acima de R$ 50.000/mês</option>
+                    </select>
+
+                    <button
+                      onClick={handleLeadSubmit}
+                      disabled={!leadData.desafio || !leadData.investimento_marketing}
+                      className="w-full rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100">
+                      Ver meu diagnóstico →
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
