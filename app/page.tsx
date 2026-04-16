@@ -23,6 +23,18 @@ const AI_INSIGHTS = [
   { icon: '📊', text: 'Comparando com benchmarks de conversão do setor...' },
   { icon: '✍️', text: 'Avaliando copy, urgência e objeções não respondidas...' },
   { icon: '✨', text: 'Gerando recomendações personalizadas para o seu negócio...' },
+  { icon: '⚡', text: 'Medindo tempo de resposta do servidor e métricas de Core Web Vitals...' },
+  { icon: '🔒', text: 'Verificando trust signals e credibilidade da página...' },
+  { icon: '🛒', text: 'Analisando fluxo de conversão e pontos de abandono...' },
+  { icon: '🧠', text: 'Identificando padrões de comportamento do consumidor brasileiro...' },
+]
+
+// Mensagens que aparecem quando a análise demora mais que o esperado (site lento)
+const SLOW_SITE_HINTS = [
+  { icon: '⏳', text: 'O site está demorando para responder — isso já é um dado importante. Velocidade impacta diretamente a conversão.' },
+  { icon: '📉', text: 'Cada segundo extra de carregamento reduz a conversão em até 7%. Estamos medindo isso com precisão.' },
+  { icon: '🔎', text: 'Site lento detectado. Isso já aparecerá como ponto crítico no seu diagnóstico — vale a espera.' },
+  { icon: '📡', text: 'Aguardando resposta do servidor... A demora aqui é, ela mesma, um problema de CRO.' },
 ]
 
 // ── Helpers de score ──────────────────────────────────────────────────────────
@@ -244,10 +256,12 @@ export default function Home() {
   const [url, setUrl] = useState('')
   const [step, setStep] = useState(0)
   const [aiMsg, setAiMsg] = useState(0)
+  const [elapsed, setElapsed] = useState(0) // segundos desde início do loading
   const [result, setResult] = useState<AnaliseResult | null>(null)
   const [error, setError] = useState('')
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
   const aiTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const elapsedTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const topRef = useRef<HTMLDivElement>(null)
 
   // Popup de tipo de página
@@ -261,6 +275,12 @@ export default function Home() {
     if (view === 'loading') {
       setStep(0)
       setAiMsg(0)
+      setElapsed(0)
+
+      // Contador de tempo real (segundos)
+      elapsedTimer.current = setInterval(() => {
+        setElapsed(e => e + 1)
+      }, 1000)
 
       // Passos 0→4: avança a cada 1.3s (rápido até chegar na IA)
       let s = 0
@@ -271,25 +291,21 @@ export default function Home() {
         }
         if (s >= LOADING_STEPS.length - 1) {
           clearInterval(timer.current!)
-          // Inicia rotação de insights da IA a cada 3.5s
+          // Inicia rotação de insights da IA a cada 3.5s — loop infinito
           aiTimer.current = setInterval(() => {
-            setAiMsg(m => {
-              const next = m + 1
-              if (next >= AI_INSIGHTS.length - 1) {
-                clearInterval(aiTimer.current!) // para no último, sem loop
-              }
-              return Math.min(next, AI_INSIGHTS.length - 1)
-            })
+            setAiMsg(m => (m + 1) % AI_INSIGHTS.length)
           }, 3500)
         }
       }, 1300)
     } else {
       if (timer.current) clearInterval(timer.current)
       if (aiTimer.current) clearInterval(aiTimer.current)
+      if (elapsedTimer.current) clearInterval(elapsedTimer.current)
     }
     return () => {
       if (timer.current) clearInterval(timer.current)
       if (aiTimer.current) clearInterval(aiTimer.current)
+      if (elapsedTimer.current) clearInterval(elapsedTimer.current)
     }
   }, [view])
 
@@ -727,7 +743,9 @@ export default function Home() {
   // ════ LOADING ══════════════════════════════════════════════════════════════
   if (view === 'loading') {
     const isAiStep = step >= LOADING_STEPS.length - 1
-    const insight = AI_INSIGHTS[aiMsg]
+    const isSlow = elapsed >= 15 // site lento detectado após 15s
+    const slowHint = SLOW_SITE_HINTS[Math.floor(elapsed / 6) % SLOW_SITE_HINTS.length]
+    const insight = isSlow && isAiStep ? slowHint : AI_INSIGHTS[aiMsg]
 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
@@ -811,15 +829,29 @@ export default function Home() {
             )}
           </div>
 
-          <p className="mt-6 text-center text-xs text-[#3C4150]">
+          <div className="mt-6 text-center space-y-1.5">
             {retryCount > 0 ? (
-              <span className="text-[#F59E0B]">
+              <p className="text-xs text-[#F59E0B]">
                 ⏳ Tentativa {retryCount + 1} de {MAX_RETRIES + 1} — o site demorou para responder, tentando novamente...
-              </span>
+              </p>
+            ) : isSlow ? (
+              <>
+                <p className="text-xs font-semibold text-[#F59E0B]">
+                  🐢 Seu site está demorando para carregar — isso já é um dado do diagnóstico
+                </p>
+                <p className="text-xs text-[#6D727C]">
+                  Sites lentos perdem até 53% dos visitantes antes do primeiro clique. Aguarde — vale a análise.
+                </p>
+              </>
             ) : (
-              'Análise completa em até 60 segundos. Não feche a janela'
+              <p className="text-xs text-[#3C4150]">
+                Análise completa em até 60 segundos. Não feche a janela.
+              </p>
             )}
-          </p>
+            {elapsed > 0 && (
+              <p className="text-[10px] text-[#3C4150]">{elapsed}s</p>
+            )}
+          </div>
         </div>
 
         {/* ── POPUP: LEAD CAPTURE (durante loading) ── */}
