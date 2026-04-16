@@ -114,7 +114,7 @@ function ModuleScore({ icon, label, sublabel, score, onClick, active }: {
 }) {
   const color = scoreColor(score)
   return (
-    <button onClick={onClick} className="flex-1 group relative cursor-pointer text-left">
+    <button onClick={onClick} className="flex-1 min-w-0 group relative cursor-pointer text-left">
       <div
         className="flex items-center gap-3 sm:gap-4 rounded-2xl border px-4 py-3.5 transition-all duration-200"
         style={{
@@ -396,17 +396,18 @@ export default function Home() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0B0726]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <img src="/logo-turbo.svg" alt="Turbo Partners" className="h-14" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <img src="/logo-turbo.svg" alt="Turbo Partners" className="h-8 sm:h-12" />
           <a href="https://turbopartners.com.br" target="_blank" rel="noreferrer"
-            className="rounded-xl border border-[#415FF2]/40 hover:border-[#415FF2] hover:bg-[#415FF2]/10 text-white text-xs font-bold px-4 py-2 transition-all">
-            Falar com especialista
+            className="rounded-xl border border-[#415FF2]/40 hover:border-[#415FF2] hover:bg-[#415FF2]/10 text-white text-xs font-bold px-3 sm:px-4 py-2 transition-all whitespace-nowrap">
+            <span className="hidden sm:inline">Falar com especialista</span>
+            <span className="sm:hidden">Falar →</span>
           </a>
         </div>
       </header>
 
       {/* ── HERO ── */}
-      <section id="diagnostico" className="relative flex flex-col items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
+      <section id="diagnostico" className="relative flex flex-col items-center justify-center px-4 sm:px-6 pt-10 pb-10 sm:pt-20 sm:pb-16 overflow-hidden">
         {/* Background glows */}
         <div className="glow-orb absolute top-[-120px] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-[#415FF2]/10 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] rounded-full bg-[#37D3A4]/6 blur-[100px] pointer-events-none" />
@@ -474,7 +475,7 @@ export default function Home() {
 
 
       {/* ── O QUE O DIAGNÓSTICO REVELA ── */}
-      <section className="px-6 py-20">
+      <section className="px-4 sm:px-6 py-12 sm:py-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs text-[#415FF2] font-bold uppercase tracking-widest mb-3">O diagnóstico</p>
@@ -536,7 +537,7 @@ export default function Home() {
       </section>
 
       {/* ── COMO FUNCIONA ── */}
-      <section className="px-6 py-16 border-t border-white/5">
+      <section className="px-4 sm:px-6 py-10 sm:py-16 border-t border-white/5">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest mb-3">Como funciona</p>
@@ -581,7 +582,7 @@ export default function Home() {
       </section>
 
       {/* ── RESULTADOS REAIS ── */}
-      <section className="px-6 py-16 border-t border-white/5">
+      <section className="px-4 sm:px-6 py-10 sm:py-16 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest mb-3">Resultados reais</p>
@@ -666,7 +667,7 @@ export default function Home() {
       </section>
 
       {/* ── CTA FINAL ── */}
-      <section className="px-6 py-20 border-t border-white/5">
+      <section className="px-4 sm:px-6 py-12 sm:py-20 border-t border-white/5">
         <div className="max-w-2xl mx-auto text-center">
           <div className="relative rounded-3xl border border-[#415FF2]/20 bg-gradient-to-b from-[#0E0B30] to-[#0B0726] p-10 overflow-hidden">
             <div className="absolute inset-0 bg-[#415FF2]/5 rounded-3xl pointer-events-none" />
@@ -748,7 +749,7 @@ export default function Home() {
     const insight = isSlow && isAiStep ? slowHint : AI_INSIGHTS[aiMsg]
 
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-10 sm:py-12">
         <img src="/logo-turbo.svg" alt="Turbo Partners" className="h-14 mb-12 opacity-60" />
 
         <div className="w-full max-w-md">
@@ -943,12 +944,12 @@ export default function Home() {
   const siBom = !isNaN(parseFloat(siStr)) && parseFloat(siStr) < 3.4
 
   return (
-    <div ref={topRef} className="min-h-screen flex flex-col pb-24">
+    <div ref={topRef} className="min-h-screen flex flex-col pb-16 sm:pb-20">
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-20 border-b border-[#1C202B] bg-[#0B0726]/95 backdrop-blur-sm">
-        <div className="max-w-[1600px] mx-auto px-6 xl:px-10 py-4 flex items-center justify-between gap-4">
-          <img src="/logo-turbo.svg" alt="Turbo Partners" className="h-14 flex-shrink-0" />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-3 sm:py-4 flex items-center justify-between gap-3">
+          <img src="/logo-turbo.svg" alt="Turbo Partners" className="h-8 sm:h-12 flex-shrink-0" />
           <div className="hidden sm:flex items-center gap-3 min-w-0">
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full border ${scoreBg(result.score_final)}`}
               style={{ color: scoreColor(result.score_final) }}>
@@ -965,44 +966,54 @@ export default function Home() {
 
       {/* ── Hero do resultado ── */}
       <div className="border-b border-[#1C202B] bg-gradient-to-b from-[#0E0B30] to-[#0B0726]">
-        <div className="max-w-[1600px] mx-auto px-6 xl:px-10 py-10">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-6 sm:py-10">
 
           {/* Score principal */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-10">
+          <div className="flex flex-row items-center gap-4 sm:gap-6 mb-6 sm:mb-10">
+            {/* Ring — menor no mobile */}
             <div className="relative inline-flex flex-shrink-0">
-              <ScoreRing score={result.score_final} size={130} strokeWidth={12} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-extrabold text-white leading-none">{result.score_final}</span>
-                <span className="text-xs text-[#9398A1] mt-0.5">/100</span>
+              <div className="block sm:hidden relative">
+                <ScoreRing score={result.score_final} size={88} strokeWidth={8} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-extrabold text-white leading-none">{result.score_final}</span>
+                  <span className="text-[10px] text-[#9398A1]">/100</span>
+                </div>
+              </div>
+              <div className="hidden sm:block relative">
+                <ScoreRing score={result.score_final} size={130} strokeWidth={12} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-extrabold text-white leading-none">{result.score_final}</span>
+                  <span className="text-xs text-[#9398A1] mt-0.5">/100</span>
+                </div>
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-[#9398A1] font-semibold uppercase tracking-widest mb-2">Diagnóstico concluído</p>
-              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight" style={{ color: scoreColor(result.score_final) }}>
+              <p className="text-[10px] sm:text-xs text-[#9398A1] font-semibold uppercase tracking-widest mb-1 sm:mb-2">Diagnóstico concluído</p>
+              <h1 className="text-lg sm:text-2xl lg:text-3xl font-extrabold leading-tight" style={{ color: scoreColor(result.score_final) }}>
                 {scoreFrase(result.score_final)}
               </h1>
 
-              {/* Potencial de melhoria */}
-              <div className="mt-4 flex flex-wrap gap-3">
-                <div className="flex items-center gap-2.5 rounded-2xl border border-[#37D3A4]/20 bg-[#37D3A4]/8 px-4 py-2.5">
-                  <span className="text-lg">📈</span>
+              {/* Stats — grid 3 colunas fixas */}
+              <div className="mt-3 sm:mt-4 grid grid-cols-3 gap-1.5 sm:gap-3 sm:flex sm:flex-wrap">
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-[#37D3A4]/20 bg-[#37D3A4]/8 px-2 sm:px-4 py-2 sm:py-2.5 text-center sm:text-left">
+                  <span className="text-base sm:text-lg">📈</span>
                   <div>
-                    <p className="text-xs text-[#9398A1] leading-none mb-0.5">Potencial de melhoria</p>
-                    <p className="text-base font-extrabold text-[#37D3A4] leading-none">+{100 - result.score_final} pontos</p>
+                    <p className="text-[9px] sm:text-xs text-[#9398A1] leading-tight">Potencial</p>
+                    <p className="text-sm sm:text-base font-extrabold text-[#37D3A4] leading-none">+{100 - result.score_final}pts</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-2xl border border-[#415FF2]/20 bg-[#415FF2]/8 px-4 py-2.5">
-                  <span className="text-lg">⚠️</span>
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-[#415FF2]/20 bg-[#415FF2]/8 px-2 sm:px-4 py-2 sm:py-2.5 text-center sm:text-left">
+                  <span className="text-base sm:text-lg">⚠️</span>
                   <div>
-                    <p className="text-xs text-[#9398A1] leading-none mb-0.5">Problemas críticos</p>
-                    <p className="text-base font-extrabold text-white leading-none">{result.cro.problemas_criticos.length} encontrados</p>
+                    <p className="text-[9px] sm:text-xs text-[#9398A1] leading-tight">Problemas</p>
+                    <p className="text-sm sm:text-base font-extrabold text-white leading-none">{result.cro.problemas_criticos.length} críticos</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-2xl border border-[#F59E0B]/20 bg-[#F59E0B]/8 px-4 py-2.5">
-                  <span className="text-lg">💡</span>
+                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1 sm:gap-2.5 rounded-xl sm:rounded-2xl border border-[#F59E0B]/20 bg-[#F59E0B]/8 px-2 sm:px-4 py-2 sm:py-2.5 text-center sm:text-left">
+                  <span className="text-base sm:text-lg">💡</span>
                   <div>
-                    <p className="text-xs text-[#9398A1] leading-none mb-0.5">Oportunidades</p>
-                    <p className="text-base font-extrabold text-white leading-none">{result.cro.melhorias.length} melhorias</p>
+                    <p className="text-[9px] sm:text-xs text-[#9398A1] leading-tight">Melhorias</p>
+                    <p className="text-sm sm:text-base font-extrabold text-white leading-none">{result.cro.melhorias.length} sugeridas</p>
                   </div>
                 </div>
               </div>
@@ -1010,12 +1021,12 @@ export default function Home() {
           </div>
 
           {/* Resumo executivo */}
-          <p className="text-sm text-[#9398A1] leading-relaxed max-w-3xl mb-6 border-l-2 border-[#415FF2]/40 pl-4">
+          <p className="text-xs sm:text-sm text-[#9398A1] leading-relaxed max-w-3xl mb-4 sm:mb-6 border-l-2 border-[#415FF2]/40 pl-3 sm:pl-4">
             {result.cro.resumo_executivo}
           </p>
 
           {/* 3 módulos como botões de aba */}
-          <p className="text-xs text-[#6D727C] font-semibold uppercase tracking-widest mb-2">Ver análise detalhada por área</p>
+          <p className="text-[10px] sm:text-xs text-[#6D727C] font-semibold uppercase tracking-widest mb-2">Ver análise detalhada por área</p>
           <div className="flex flex-col sm:flex-row gap-2">
             <ModuleScore icon="🎯" label="Design e Copy" sublabel="Convence o cliente?" score={result.cro.score_geral}
               onClick={() => setActiveTab('design')} active={activeTab === 'design'} />
@@ -1028,7 +1039,7 @@ export default function Home() {
       </div>
 
       {/* ── Conteúdo das abas ── */}
-      <main className="flex-1 max-w-[1600px] mx-auto w-full px-6 xl:px-10 py-8">
+      <main className="flex-1 max-w-[1600px] mx-auto w-full px-4 sm:px-6 xl:px-10 py-5 sm:py-8">
 
         {/* ══ ABA: VISUAL & VENDAS ══ */}
         {activeTab === 'design' && (
@@ -1078,8 +1089,8 @@ export default function Home() {
 
               {/* Sub-scores em linguagem de negócio */}
               <div>
-                <p className="text-xs font-bold text-[#9398A1] mb-2.5 uppercase tracking-wide">Como sua página se sai em cada área</p>
-                <div className="grid grid-cols-3 gap-2.5">
+                <p className="text-[10px] sm:text-xs font-bold text-[#9398A1] mb-2 sm:mb-2.5 uppercase tracking-wide">Como sua página se sai em cada área</p>
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: 'Clareza da mensagem', score: result.cro.score_proposta_valor },
                     { label: 'Transmite confiança', score: result.cro.score_confianca },
@@ -1325,17 +1336,20 @@ export default function Home() {
 
       {/* ── CTA fixo no rodapé ── */}
       <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#1D1E6C]/40 bg-[#0B0726]/98 backdrop-blur-md">
-        <div className="max-w-[1600px] mx-auto px-6 xl:px-10 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="text-center sm:text-left">
-            <p className="text-sm font-extrabold text-white">{cta.titulo}</p>
-            <p className="text-xs text-[#9398A1] mt-0.5">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-3 flex flex-row items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {/* Mobile: texto curto */}
+            <p className="text-xs font-extrabold text-white leading-tight sm:hidden truncate">Quer vender mais?</p>
+            {/* Desktop: texto completo */}
+            <p className="text-sm font-extrabold text-white hidden sm:block">{cta.titulo}</p>
+            <p className="text-xs text-[#9398A1] mt-0.5 hidden sm:block">
               <span className="text-[#37D3A4] font-bold">{cta.case.resultado}</span>
               {' '}· {cta.case.nome} com a Turbo Partners
             </p>
           </div>
           <a href="https://turbopartners.com.br" target="_blank" rel="noreferrer"
-            className="flex-shrink-0 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-95 text-[#0B0726] font-extrabold px-6 py-3 text-sm transition-all shadow-lg shadow-[#37D3A4]/20 whitespace-nowrap">
-            Quero resolver isso →
+            className="flex-shrink-0 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-95 text-[#0B0726] font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm transition-all shadow-lg shadow-[#37D3A4]/20 whitespace-nowrap">
+            Resolver isso →
           </a>
         </div>
       </div>
