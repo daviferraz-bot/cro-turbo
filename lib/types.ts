@@ -1,14 +1,5 @@
 export type TipoPagina = 'homepage' | 'produto' | 'landing_page'
 
-export interface LeadData {
-  nome: string
-  telefone: string
-  nicho: string
-  faturamento: string
-  desafio: string
-  investimento_marketing: string
-}
-
 export interface PageSpeedResult {
   mobile_score: number
   lcp: string

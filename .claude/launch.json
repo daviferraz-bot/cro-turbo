@@ -5,6 +5,7 @@
       "name": "dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}",
       "port": 3000
     }
   ]

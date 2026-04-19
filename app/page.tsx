@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import type { AnaliseResult, CroMelhoria, CroProblema, CodigoCheck, TipoPagina, LeadData } from '@/lib/types'
+import type { AnaliseResult, CroMelhoria, CroProblema, CodigoCheck, TipoPagina } from '@/lib/types'
+import { pdf } from '@react-pdf/renderer'
+import { PdfRelatorio } from '@/components/PdfRelatorio'
 
 type View = 'input' | 'loading' | 'results'
 type Tab = 'design' | 'codigo' | 'speed'
@@ -61,35 +63,6 @@ function scoreFrase(s: number) {
   if (s >= 60) return 'Seu site tem espaço para melhorar'
   if (s >= 40) return 'Seu site está perdendo clientes'
   return 'Seu site está afastando clientes'
-}
-
-// ── CTA contextual com cases reais da Turbo ──────────────────────────────────
-function getCtaContextual(result: AnaliseResult) {
-  const mobileScore = result.pagespeed.mobile_score
-  if (mobileScore < 40 && result.codigo.score < 50) return {
-    titulo: 'Seu site precisa de uma base nova',
-    desc: 'A Cristal Graffiti também precisava. Reconstruímos a loja do zero e em 2 meses cresceram 226%. Às vezes recomeçar custa menos do que corrigir.',
-    servico: 'Novo site ou e-commerce',
-    case: { nome: 'Cristal Graffiti', resultado: '+226% em 2 meses' },
-  }
-  if (result.cro.perfil_servico === 'ecommerce') return {
-    titulo: 'Sua loja está deixando dinheiro na mesa',
-    desc: 'A Bready saiu do zero e chegou a R$ 300 mil/mês com taxa de conversão de 2,36%, em menos de 12 meses com a Turbo.',
-    servico: 'E-commerce de alta conversão',
-    case: { nome: 'Bready', resultado: 'R$ 300k/mês · 2,36% conversão' },
-  }
-  if (result.cro.score_geral < 50) return {
-    titulo: 'Dá para vender mais sem gastar mais com anúncios',
-    desc: 'A Calê aumentou a receita em 86% e dobrou a taxa de conversão, sem aumentar nem um real em mídia paga.',
-    servico: 'Otimização de conversão (CRO)',
-    case: { nome: 'Calê', resultado: '+86% de receita · +100% de conversão' },
-  }
-  return {
-    titulo: 'Seu site tem boa base. Hora de escalar',
-    desc: 'A Solvee cresceu 170% no faturamento e reduziu o CAC em 50% com a Turbo cuidando de performance e conversão.',
-    servico: 'CRO e otimização contínua',
-    case: { nome: 'Solvee', resultado: '+170% faturamento · -50% CAC' },
-  }
 }
 
 // ── Score Ring ────────────────────────────────────────────────────────────────
@@ -267,10 +240,8 @@ export default function Home() {
   // Popup de tipo de página
   const [showTipoPopup, setShowTipoPopup] = useState(false)
 
-  // Popup de lead (durante loading)
-  const [showLeadPopup, setShowLeadPopup] = useState(false)
-  const [popupStep, setPopupStep] = useState<1 | 2>(1)
-  const [leadData, setLeadData] = useState<LeadData>({ nome: '', telefone: '', nicho: '', faturamento: '', desafio: '', investimento_marketing: '' })
+  // Export de PDF
+  const [exportandoPdf, setExportandoPdf] = useState(false)
 
   useEffect(() => {
     if (view === 'loading') {
@@ -338,15 +309,12 @@ export default function Home() {
     setShowTipoPopup(true)
   }
 
-  // Quando o usuário seleciona o tipo, inicia a análise + abre lead popup com delay
+  // Quando o usuário seleciona o tipo, inicia a análise
   async function iniciarAnalise(tipo: TipoPagina) {
     setShowTipoPopup(false)
     setRetryCount(0)
     setActiveTab('design')
     setView('loading')
-
-    // Mostra popup de lead após 3s (enquanto a análise roda por trás)
-    setTimeout(() => { setPopupStep(1); setShowLeadPopup(true) }, 3000)
 
     const trimmedUrl = url.trim()
     let lastError: Error | null = null
@@ -359,7 +327,6 @@ export default function Home() {
           setAiMsg(0)
         }
         const data = await tentarAnalise(trimmedUrl, tipo)
-        setShowLeadPopup(false)
         setResult(data)
         setView('results')
         topRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -375,18 +342,31 @@ export default function Home() {
       : lastError?.message ?? 'Não conseguimos analisar esse endereço. Tente novamente.'
     setError(msg)
     setRetryCount(0)
-    setShowLeadPopup(false)
     setView('input')
   }
 
-  function handleLeadStep1() {
-    if (!leadData.nome || !leadData.telefone || !leadData.nicho || !leadData.faturamento) return
-    setPopupStep(2)
-  }
-
-  function handleLeadSubmit() {
-    console.log('[LEAD CAPTURADO]', { ...leadData, url, timestamp: new Date().toISOString() })
-    setShowLeadPopup(false)
+  // Exporta o relatório atual em PDF com branding Turbo
+  async function baixarPdf() {
+    if (!result || exportandoPdf) return
+    setExportandoPdf(true)
+    try {
+      const blob = await pdf(<PdfRelatorio result={result} />).toBlob()
+      const urlBlob = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = urlBlob
+      const dominio = (() => { try { return new URL(result.url).hostname.replace(/^www\./, '') } catch { return 'site' } })()
+      const data = new Date(result.analisado_em).toISOString().slice(0, 10)
+      a.download = `diagnostico-turbo-${dominio}-${data}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(urlBlob)
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err)
+      alert('Não foi possível gerar o PDF. Tente novamente em alguns segundos.')
+    } finally {
+      setExportandoPdf(false)
+    }
   }
 
   function novaAnalise() {
@@ -861,148 +841,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── POPUP: LEAD CAPTURE (durante loading) ── */}
-        {showLeadPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm">
-            <div className="relative w-full max-w-md rounded-3xl border border-[#1C202B] bg-[#0E0B30] shadow-2xl overflow-hidden">
-
-              {/* Barra de progresso */}
-              <div className="h-1 bg-[#1C202B]">
-                <div
-                  className="h-full bg-gradient-to-r from-[#415FF2] to-[#37D3A4] transition-all duration-500"
-                  style={{ width: popupStep === 1 ? '50%' : '100%' }}
-                />
-              </div>
-
-              <div className="p-6 sm:p-8">
-                {/* Step indicator */}
-                <div className="flex items-center justify-between mb-5">
-                  <p className="text-xs text-[#37D3A4] font-bold uppercase tracking-widest">Enquanto a IA trabalha</p>
-                  <span className="text-xs text-[#6D727C] font-medium">
-                    {popupStep === 1 ? 'Passo 1 de 2' : 'Passo 2 de 2 — quase lá!'}
-                  </span>
-                </div>
-
-                {/* ── STEP 1 ── */}
-                {popupStep === 1 && (
-                  <>
-                    <h2 className="text-xl font-extrabold text-white leading-tight mb-1">Quer receber o diagnóstico completo?</h2>
-                    <p className="text-sm text-[#9398A1] mb-5">Preencha para receber recomendações personalizadas.</p>
-
-                    <div className="space-y-3">
-                      <input
-                        type="text" placeholder="Seu nome" value={leadData.nome}
-                        onChange={e => setLeadData(d => ({ ...d, nome: e.target.value }))}
-                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
-                      />
-                      <input
-                        type="tel" placeholder="WhatsApp (com DDD)" value={leadData.telefone}
-                        onChange={e => setLeadData(d => ({ ...d, telefone: e.target.value }))}
-                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white placeholder-[#6D727C] outline-none focus:border-[#415FF2]/50 transition-colors"
-                      />
-                      <select
-                        value={leadData.nicho}
-                        onChange={e => setLeadData(d => ({ ...d, nicho: e.target.value }))}
-                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
-                      >
-                        <option value="" disabled>Seu nicho</option>
-                        <option value="moda">Moda e Vestuário</option>
-                        <option value="cosmeticos">Cosméticos e Beleza</option>
-                        <option value="suplementos">Suplementos e Saúde</option>
-                        <option value="alimentos">Alimentos e Bebidas</option>
-                        <option value="casa_decoracao">Casa e Decoração</option>
-                        <option value="pet">Pet</option>
-                        <option value="dnvb">DNVB / Marca própria D2C</option>
-                        <option value="eletronicos">Eletrônicos e Acessórios</option>
-                        <option value="joias_acessorios">Joias e Acessórios</option>
-                        <option value="infantil">Infantil e Bebê</option>
-                        <option value="esporte">Esporte e Fitness</option>
-                        <option value="outro">Outro</option>
-                      </select>
-                      <select
-                        value={leadData.faturamento}
-                        onChange={e => setLeadData(d => ({ ...d, faturamento: e.target.value }))}
-                        className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none"
-                      >
-                        <option value="" disabled>Faturamento mensal</option>
-                        <option value="ate_50k">Até R$ 50k/mês</option>
-                        <option value="50k_200k">R$ 50k – 200k/mês</option>
-                        <option value="200k_500k">R$ 200k – 500k/mês</option>
-                        <option value="500k_1m">R$ 500k – 1M/mês</option>
-                        <option value="acima_1m">Acima de R$ 1M/mês</option>
-                      </select>
-                    </div>
-
-                    <button
-                      onClick={handleLeadStep1}
-                      disabled={!leadData.nome || !leadData.telefone || !leadData.nicho || !leadData.faturamento}
-                      className="w-full mt-5 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100">
-                      Continuar →
-                    </button>
-                  </>
-                )}
-
-                {/* ── STEP 2 ── */}
-                {popupStep === 2 && (
-                  <>
-                    <h2 className="text-xl font-extrabold text-white leading-tight mb-1">Só mais duas perguntas rápidas</h2>
-                    <p className="text-sm text-[#9398A1] mb-5">Isso nos ajuda a preparar uma proposta personalizada para você.</p>
-
-                    {/* Desafio — cards clicáveis */}
-                    <p className="text-xs font-bold text-[#9398A1] uppercase tracking-wide mb-2.5">Qual é o seu principal desafio hoje?</p>
-                    <div className="space-y-2 mb-5">
-                      {[
-                        { value: 'baixa_conversao', icon: '📉', label: 'Minha taxa de conversão está baixa' },
-                        { value: 'site_lento', icon: '🐢', label: 'Meu site é lento e perde clientes' },
-                        { value: 'cac_alto', icon: '💸', label: 'Meu CAC está alto, difícil de escalar' },
-                        { value: 'abandono_carrinho', icon: '🛒', label: 'Muitos abandonos de carrinho' },
-                        { value: 'concorrencia', icon: '🏆', label: 'Minha concorrência está me superando' },
-                      ].map(op => (
-                        <button
-                          key={op.value}
-                          onClick={() => setLeadData(d => ({ ...d, desafio: op.value }))}
-                          className={`w-full flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all ${
-                            leadData.desafio === op.value
-                              ? 'border-[#415FF2] bg-[#415FF2]/15 text-white'
-                              : 'border-[#1C202B] bg-[#100C35] text-[#9398A1] hover:border-[#415FF2]/40 hover:text-white'
-                          }`}
-                        >
-                          <span className="text-base flex-shrink-0">{op.icon}</span>
-                          <span>{op.label}</span>
-                          {leadData.desafio === op.value && (
-                            <span className="ml-auto text-[#37D3A4] text-xs font-bold flex-shrink-0">✓</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Investimento em marketing */}
-                    <p className="text-xs font-bold text-[#9398A1] uppercase tracking-wide mb-2.5">Quanto você investe em marketing digital por mês?</p>
-                    <select
-                      value={leadData.investimento_marketing}
-                      onChange={e => setLeadData(d => ({ ...d, investimento_marketing: e.target.value }))}
-                      className="w-full rounded-xl border border-[#1C202B] bg-[#100C35] px-4 py-3 text-sm text-white outline-none focus:border-[#415FF2]/50 transition-colors appearance-none mb-5"
-                    >
-                      <option value="" disabled>Selecione uma faixa</option>
-                      <option value="sem_investimento">Ainda não tenho investimento fixo</option>
-                      <option value="ate_5k">Até R$ 5.000/mês</option>
-                      <option value="5k_20k">R$ 5.000 a R$ 20.000/mês</option>
-                      <option value="20k_50k">R$ 20.000 a R$ 50.000/mês</option>
-                      <option value="acima_50k">Acima de R$ 50.000/mês</option>
-                    </select>
-
-                    <button
-                      onClick={handleLeadSubmit}
-                      disabled={!leadData.desafio || !leadData.investimento_marketing}
-                      className="w-full rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-[0.98] text-[#0B0726] font-extrabold py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/25 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100">
-                      Ver meu diagnóstico →
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -1011,8 +849,6 @@ export default function Home() {
   if (!result) return null
 
   const mobileScore = result.pagespeed.mobile_score
-  const cta = getCtaContextual(result)
-
   const checksRuins = result.codigo.checks.filter(c => !c.passou)
   const checksBons = result.codigo.checks.filter(c => c.passou)
   const urgentes = checksRuins.filter(c => c.peso === 'critico')
@@ -1031,7 +867,7 @@ export default function Home() {
   const siBom = !isNaN(parseFloat(siStr)) && parseFloat(siStr) < 3.4
 
   return (
-    <div ref={topRef} className="min-h-screen flex flex-col pb-16 sm:pb-20">
+    <div ref={topRef} className="min-h-screen flex flex-col">
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-20 border-b border-[#1C202B] bg-[#0B0726]/95 backdrop-blur-sm">
@@ -1227,23 +1063,33 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* CTA inline no final da coluna direita */}
+              {/* CTA inline no final: baixar análise em PDF */}
               <div className="relative rounded-3xl border border-[#415FF2]/25 bg-gradient-to-br from-[#0E0B30] to-[#0B0726] overflow-hidden p-8">
                 <div className="absolute top-[-60px] right-[-60px] w-[240px] h-[240px] rounded-full bg-[#415FF2]/10 blur-[80px] pointer-events-none" />
                 <div className="relative">
                   <p className="text-xs font-bold text-[#37D3A4] uppercase tracking-widest mb-3">Próximo passo</p>
-                  <h3 className="text-xl font-extrabold text-white leading-snug mb-2">{cta.titulo}</h3>
-                  <p className="text-sm text-[#9398A1] leading-relaxed mb-6">{cta.desc}</p>
+                  <h3 className="text-xl font-extrabold text-white leading-snug mb-2">Leve essa análise com você</h3>
+                  <p className="text-sm text-[#9398A1] leading-relaxed mb-6">
+                    Baixe o diagnóstico completo em PDF com branding Turbo para apresentar ao cliente ou guardar no histórico da conta.
+                  </p>
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <a href="https://turbopartners.com.br" target="_blank" rel="noreferrer"
-                      className="rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-95 text-[#0B0726] font-extrabold px-7 py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/20 whitespace-nowrap">
-                      Quero resolver isso →
-                    </a>
+                    <button
+                      onClick={baixarPdf}
+                      disabled={exportandoPdf}
+                      className="rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-95 text-[#0B0726] font-extrabold px-7 py-3.5 text-sm transition-all shadow-lg shadow-[#37D3A4]/20 whitespace-nowrap disabled:opacity-50 disabled:cursor-wait inline-flex items-center gap-2">
+                      {exportandoPdf ? (
+                        <>
+                          <span className="inline-block w-4 h-4 rounded-full border-2 border-[#0B0726]/30 border-t-[#0B0726] animate-spin" />
+                          Gerando PDF…
+                        </>
+                      ) : (
+                        <>📄 Baixar análise em PDF</>
+                      )}
+                    </button>
                     <div>
-                      <p className="text-xs font-bold text-white">{cta.servico}</p>
+                      <p className="text-xs font-bold text-white">Relatório completo</p>
                       <p className="text-xs text-[#9398A1] mt-0.5">
-                        <span className="text-[#37D3A4] font-bold">{cta.case.resultado}</span>
-                        {' '}· {cta.case.nome} com a Turbo
+                        Nota geral, problemas, oportunidades e velocidade — em 3 páginas
                       </p>
                     </div>
                   </div>
@@ -1368,25 +1214,25 @@ export default function Home() {
               <p className="text-sm font-bold text-[#9398A1] mb-4 uppercase tracking-wide">O que medimos (no celular)</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <VelocidadeMetrica
-                  nome="Tempo para aparecer na tela" sigla="LCP — Largest Contentful Paint"
-                  valor={result.pagespeed.lcp} meta="menos de 2.5 segundos" bom={lcpBom}
-                  oQueSig="O conteúdo principal está demorando muito para aparecer. O visitante vê uma tela quase em branco por esse tempo. Muitos desistem antes disso." />
+                  nome="Tempo até a imagem principal aparecer" sigla="Quanto o cliente espera para ver o que importa"
+                  valor={result.pagespeed.lcp} meta="menos de 2,5 segundos" bom={lcpBom}
+                  oQueSig="A imagem ou bloco principal está demorando demais para carregar. O cliente vê tela quase em branco e boa parte desiste antes do site terminar." />
                 <VelocidadeMetrica
-                  nome="Estabilidade durante o carregamento" sigla="CLS — Cumulative Layout Shift"
-                  valor={result.pagespeed.cls} meta="abaixo de 0.1" bom={clsBom}
-                  oQueSig="Sua página está 'pulando' enquanto carrega: elementos se movem e o usuário pode clicar no lugar errado sem querer, gerando frustração." />
+                  nome="Layout estável enquanto carrega" sigla="Se os elementos ficam pulando na tela"
+                  valor={result.pagespeed.cls} meta="abaixo de 0,1" bom={clsBom}
+                  oQueSig="A página está 'pulando' enquanto carrega. O cliente tenta clicar num botão e acerta outro — isso irrita e faz muita gente sair antes de comprar." />
                 <VelocidadeMetrica
-                  nome="Primeira resposta visual" sigla="FCP — First Contentful Paint"
-                  valor={result.pagespeed.fcp} meta="menos de 1.8 segundo" bom={fcpBom}
-                  oQueSig="O visitante fica olhando para uma tela em branco por muito tempo antes de ver qualquer coisa. Isso gera a sensação de que o site 'travou'." />
+                  nome="Tempo até a página começar a aparecer" sigla="Primeira coisa que o cliente vê na tela"
+                  valor={result.pagespeed.fcp} meta="menos de 1,8 segundo" bom={fcpBom}
+                  oQueSig="O cliente olha para uma tela vazia por muito tempo antes de ver qualquer coisa. Passa a sensação de que o site travou e muita gente fecha a aba." />
                 <VelocidadeMetrica
-                  nome="Velocidade do servidor" sigla="TTFB — Time to First Byte"
-                  valor={ttfbStr} meta="menos de 800ms" bom={ttfbBom}
-                  oQueSig="Seu servidor está demorando para responder. Isso afeta tudo: todos os outros tempos ficam maiores por causa disso." />
+                  nome="Tempo de resposta do servidor" sigla="O quão rápido o site começa a responder"
+                  valor={ttfbStr} meta="menos de 0,8 segundo" bom={ttfbBom}
+                  oQueSig="O servidor demora para responder ao primeiro pedido. Isso deixa tudo lento depois — cada página que o cliente abre herda essa lentidão." />
                 <VelocidadeMetrica
-                  nome="Percepção de velocidade geral" sigla="Speed Index"
-                  valor={siStr} meta="menos de 3.4 segundos" bom={siBom}
-                  oQueSig="Indica como o visitante percebe a velocidade do site. Quanto maior, mais tempo ele fica vendo uma página incompleta." />
+                  nome="Velocidade geral de carregamento" sigla="Percepção de rapidez do site como um todo"
+                  valor={siStr} meta="menos de 3,4 segundos" bom={siBom}
+                  oQueSig="Este é o número que resume como o cliente sente a velocidade. Quanto maior, mais tempo ele passa vendo uma página incompleta e perdendo paciência." />
                 <div className={`rounded-2xl border p-5 flex flex-col justify-center ${mobileScore >= 80 ? 'border-emerald-500/20 bg-emerald-500/5' : mobileScore >= 60 ? 'border-yellow-500/20 bg-yellow-500/5' : 'border-red-400/20 bg-red-400/5'}`}>
                   <p className="text-xs text-[#9398A1] font-medium mb-2">Nota geral de velocidade</p>
                   <p className="text-4xl font-extrabold text-white">{mobileScore}<span className="text-base text-[#9398A1] font-normal">/100</span></p>
@@ -1420,26 +1266,6 @@ export default function Home() {
           </div>
         )}
       </main>
-
-      {/* ── CTA fixo no rodapé ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#1D1E6C]/40 bg-[#0B0726]/98 backdrop-blur-md">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 xl:px-10 py-3 flex flex-row items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            {/* Mobile: texto curto */}
-            <p className="text-xs font-extrabold text-white leading-tight sm:hidden truncate">Quer vender mais?</p>
-            {/* Desktop: texto completo */}
-            <p className="text-sm font-extrabold text-white hidden sm:block">{cta.titulo}</p>
-            <p className="text-xs text-[#9398A1] mt-0.5 hidden sm:block">
-              <span className="text-[#37D3A4] font-bold">{cta.case.resultado}</span>
-              {' '}· {cta.case.nome} com a Turbo Partners
-            </p>
-          </div>
-          <a href="https://turbopartners.com.br" target="_blank" rel="noreferrer"
-            className="flex-shrink-0 rounded-xl bg-[#37D3A4] hover:bg-[#2BB88E] active:scale-95 text-[#0B0726] font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm transition-all shadow-lg shadow-[#37D3A4]/20 whitespace-nowrap">
-            Resolver isso →
-          </a>
-        </div>
-      </div>
 
     </div>
   )

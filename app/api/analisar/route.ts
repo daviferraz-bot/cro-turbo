@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { analisarPageSpeed } from '@/lib/pagespeed'
 import { analisarCodigo } from '@/lib/codigo'
 import { analisarCRO } from '@/lib/cro'
+import { cortarSeNecessario } from '@/lib/image-utils'
 import type { AnaliseResult, TipoPagina } from '@/lib/types'
 
 export const maxDuration = 60 // segundos (máximo no plano Hobby da Vercel)
@@ -50,11 +51,23 @@ export async function POST(req: NextRequest) {
       })),
     ])
 
-    // Screenshot da primeira dobra via PageSpeed (final-screenshot do Lighthouse)
-    const screenshot = pagespeed.screenshot
-    const screenshotMime = pagespeed.screenshotMime ?? 'image/jpeg'
+    // Screenshot via PageSpeed: prioriza fullPageScreenshot do Lighthouse e cai
+    // para final-screenshot (primeira dobra) como fallback (feito em pagespeed.ts).
+    const rawScreenshot = pagespeed.screenshot
+    const rawMime = pagespeed.screenshotMime ?? 'image/jpeg'
 
-    // CRO com screenshot da primeira dobra
+    // Corta o topo da imagem se ela estourar o limite de 8000px da Claude Vision.
+    // Isso mantém as primeiras dobras visíveis (2, 3, 4+) em vez de perder a
+    // análise inteira por causa de uma página muito longa.
+    let screenshot = rawScreenshot
+    let screenshotMime = rawMime
+    if (rawScreenshot) {
+      const cropped = await cortarSeNecessario(rawScreenshot, rawMime)
+      screenshot = cropped.base64
+      screenshotMime = cropped.mime
+    }
+
+    // CRO com screenshot da página (inteira ou cortada nas primeiras dobras)
     const cro = await analisarCRO(normalizedUrl, tipo_pagina, screenshot, screenshotMime)
 
     // Score final ponderado: CRO 50% + PageSpeed Mobile 30% + Código 20%
