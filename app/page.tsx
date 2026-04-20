@@ -8,27 +8,44 @@ import { PdfRelatorio } from '@/components/PdfRelatorio'
 type View = 'input' | 'loading' | 'results'
 type Tab = 'design' | 'codigo' | 'speed'
 
+// Chips macro: 5 etapas visíveis no topo do loading
 const LOADING_STEPS = [
-  { label: 'Acessando o site', icon: '🌐' },
-  { label: 'Medindo a velocidade', icon: '⚡' },
-  { label: 'Verificando a estrutura', icon: '🔍' },
-  { label: 'Capturando screenshot', icon: '📸' },
-  { label: 'IA analisando', icon: '🤖' },
+  { label: 'Acessando o site', icon: '🌐', macro: 'acesso' as const },
+  { label: 'Medindo desempenho', icon: '⚡', macro: 'desempenho' as const },
+  { label: 'Checando estrutura', icon: '🔍', macro: 'estrutura' as const },
+  { label: 'Capturando visual', icon: '📸', macro: 'visual' as const },
+  { label: 'Análise por IA', icon: '🤖', macro: 'ia' as const },
 ]
 
-const AI_INSIGHTS = [
-  { icon: '💡', text: 'Analisando proposta de valor e clareza da mensagem...' },
-  { icon: '🎯', text: 'Verificando posicionamento e visibilidade do CTA...' },
-  { icon: '🔍', text: 'Avaliando prova social e elementos de confiança...' },
-  { icon: '📱', text: 'Testando experiência mobile e responsividade...' },
-  { icon: '🏗️', text: 'Verificando hierarquia visual e fluxo da página...' },
-  { icon: '📊', text: 'Comparando com benchmarks de conversão do setor...' },
-  { icon: '✍️', text: 'Avaliando copy, urgência e objeções não respondidas...' },
-  { icon: '✨', text: 'Gerando recomendações personalizadas para o seu negócio...' },
-  { icon: '⚡', text: 'Medindo tempo de resposta do servidor e métricas de Core Web Vitals...' },
-  { icon: '🔒', text: 'Verificando trust signals e credibilidade da página...' },
-  { icon: '🛒', text: 'Analisando fluxo de conversão e pontos de abandono...' },
-  { icon: '🧠', text: 'Identificando padrões de comportamento do consumidor brasileiro...' },
+type MacroFase = 'acesso' | 'desempenho' | 'estrutura' | 'visual' | 'ia'
+
+// Microfases narrativas — avançam monotonicamente até a última (sem ciclar).
+// ~17 fases × ~3.5s ≈ 60s, casando com o tempo máximo do /api/analisar.
+// Se a análise terminar antes, o fluxo é interrompido e pula para os resultados.
+// Se passar dos 60s, fica travado na última fase ("Finalizando") em vez de reiniciar.
+const AI_INSIGHTS: { icon: string; text: string; macro: MacroFase }[] = [
+  // Fase 1: Acesso
+  { icon: '🌐', text: 'Acessando o site...', macro: 'acesso' },
+  { icon: '📄', text: 'Carregando a página por inteiro...', macro: 'acesso' },
+  // Fase 2: Desempenho (PageSpeed)
+  { icon: '⚡', text: 'Medindo a velocidade no celular...', macro: 'desempenho' },
+  { icon: '⏱️', text: 'Avaliando o tempo de carregamento...', macro: 'desempenho' },
+  { icon: '📡', text: 'Verificando a resposta do servidor...', macro: 'desempenho' },
+  // Fase 3: Estrutura (código/SEO)
+  { icon: '🏗️', text: 'Analisando a estrutura do código...', macro: 'estrutura' },
+  { icon: '🔧', text: 'Verificando boas práticas e tags...', macro: 'estrutura' },
+  { icon: '📱', text: 'Checando experiência no mobile...', macro: 'estrutura' },
+  // Fase 4: Visual (screenshot)
+  { icon: '📸', text: 'Capturando print da página...', macro: 'visual' },
+  { icon: '🖼️', text: 'Preparando a imagem para análise...', macro: 'visual' },
+  // Fase 5: IA (CRO)
+  { icon: '🎯', text: 'Analisando a primeira dobra...', macro: 'ia' },
+  { icon: '💡', text: 'Avaliando proposta de valor e clareza...', macro: 'ia' },
+  { icon: '🛡️', text: 'Verificando prova social e confiança...', macro: 'ia' },
+  { icon: '🛒', text: 'Revisando o botão principal de compra...', macro: 'ia' },
+  { icon: '🔎', text: 'Identificando gaps de conversão...', macro: 'ia' },
+  { icon: '✨', text: 'Gerando recomendações personalizadas...', macro: 'ia' },
+  { icon: '🧠', text: 'Finalizando o diagnóstico...', macro: 'ia' },
 ]
 
 // Mensagens que aparecem quando a análise demora mais que o esperado (site lento)
@@ -254,21 +271,12 @@ export default function Home() {
         setElapsed(e => e + 1)
       }, 1000)
 
-      // Passos 0→4: avança a cada 1.3s (rápido até chegar na IA)
-      let s = 0
-      timer.current = setInterval(() => {
-        s++
-        if (s < LOADING_STEPS.length) {
-          setStep(s)
-        }
-        if (s >= LOADING_STEPS.length - 1) {
-          clearInterval(timer.current!)
-          // Inicia rotação de insights da IA a cada 3.5s — loop infinito
-          aiTimer.current = setInterval(() => {
-            setAiMsg(m => (m + 1) % AI_INSIGHTS.length)
-          }, 3500)
-        }
-      }, 1300)
+      // Avança 1 microfase a cada 3.5s, monotonicamente.
+      // Ao chegar na última, FICA parado ali (sem voltar pro 1) — evita o visual de bug.
+      // Quando a análise real termina (view muda pra 'results'), o interval é limpo.
+      aiTimer.current = setInterval(() => {
+        setAiMsg(m => (m >= AI_INSIGHTS.length - 1 ? m : m + 1))
+      }, 3500)
     } else {
       if (timer.current) clearInterval(timer.current)
       if (aiTimer.current) clearInterval(aiTimer.current)
@@ -280,6 +288,11 @@ export default function Home() {
       if (elapsedTimer.current) clearInterval(elapsedTimer.current)
     }
   }, [view])
+
+  // O chip macro ativo é derivado da microfase atual (AI_INSIGHTS[aiMsg].macro).
+  // Quando aiMsg chega na última (IA finalizando), a macro "ia" está ativa desde antes.
+  const macroAtiva: MacroFase = AI_INSIGHTS[aiMsg]?.macro ?? 'acesso'
+  const macroAtivaIndex = LOADING_STEPS.findIndex(s => s.macro === macroAtiva)
 
   const [retryCount, setRetryCount] = useState(0)
   const MAX_RETRIES = 2
@@ -729,10 +742,11 @@ export default function Home() {
 
   // ════ LOADING ══════════════════════════════════════════════════════════════
   if (view === 'loading') {
-    const isAiStep = step >= LOADING_STEPS.length - 1
     const isSlow = elapsed >= 15 // site lento detectado após 15s
+    const isLastPhase = aiMsg >= AI_INSIGHTS.length - 1
     const slowHint = SLOW_SITE_HINTS[Math.floor(elapsed / 6) % SLOW_SITE_HINTS.length]
-    const insight = isSlow && isAiStep ? slowHint : AI_INSIGHTS[aiMsg]
+    // Se o site tá lento E estamos na última fase, mostramos dica contextual em vez da fase
+    const insight = isSlow && isLastPhase ? slowHint : AI_INSIGHTS[aiMsg]
 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-10 sm:py-12">
@@ -742,7 +756,7 @@ export default function Home() {
           {/* Título */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-extrabold text-white mb-2">
-              {isAiStep ? 'IA analisando sua página' : 'Preparando o diagnóstico'}
+              {macroAtiva === 'ia' ? 'IA analisando sua página' : 'Preparando o diagnóstico'}
             </h2>
             {/* URL em estilo browser bar */}
             <div className="inline-flex items-center gap-2 rounded-full border border-[#1C202B] bg-[#100C35] px-4 py-1.5 max-w-xs">
@@ -751,11 +765,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Passos rápidos — mini chips quando concluídos */}
+          {/* Chips macro — baseados em qual macro está ativa agora */}
           <div className="flex flex-wrap gap-2 justify-center mb-8">
             {LOADING_STEPS.map((s, i) => {
-              const done = i < step
-              const active = i === step && !isAiStep
+              const done = i < macroAtivaIndex
+              const active = i === macroAtivaIndex
               return (
                 <div key={s.label} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-500 ${
                   done ? 'border border-emerald-500/25 bg-emerald-500/8 text-emerald-400'
@@ -771,49 +785,45 @@ export default function Home() {
             })}
           </div>
 
-          {/* Painel de análise da IA — aparece quando chega no último passo */}
-          <div className={`rounded-2xl border transition-all duration-700 overflow-hidden ${
-            isAiStep
-              ? 'border-[#415FF2]/30 bg-[#415FF2]/8 opacity-100 translate-y-0'
-              : 'border-[#1C202B] bg-[#100C35] opacity-40'
-          }`}>
+          {/* Painel com a microfase atual — sempre ativo, narrando o progresso real */}
+          <div className="rounded-2xl border border-[#415FF2]/30 bg-[#415FF2]/8 overflow-hidden">
             {/* Header do painel */}
             <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/5">
               <div className="flex gap-1">
-                <span className={`w-2 h-2 rounded-full ${isAiStep ? 'bg-[#37D3A4] animate-pulse' : 'bg-[#3C4150]'}`} />
-                <span className={`w-2 h-2 rounded-full ${isAiStep ? 'bg-[#415FF2] animate-pulse' : 'bg-[#3C4150]'} delay-150`} />
-                <span className={`w-2 h-2 rounded-full ${isAiStep ? 'bg-[#F59E0B] animate-pulse' : 'bg-[#3C4150]'} delay-300`} />
+                <span className="w-2 h-2 rounded-full bg-[#37D3A4] animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-[#415FF2] animate-pulse delay-150" />
+                <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse delay-300" />
               </div>
-              <span className="text-xs text-[#6D727C] font-medium">Análise por IA</span>
+              <span className="text-xs text-[#6D727C] font-medium">
+                {LOADING_STEPS[macroAtivaIndex]?.label ?? 'Análise em andamento'}
+              </span>
             </div>
 
             {/* Insight atual */}
             <div className="px-5 py-5 min-h-[80px] flex items-center gap-4">
               <span className="text-2xl flex-shrink-0 transition-all duration-500">
-                {isAiStep ? insight.icon : '🤖'}
+                {insight.icon}
               </span>
               <p className="text-sm text-white/80 leading-relaxed transition-all duration-500">
-                {isAiStep ? insight.text : 'Aguardando captura da página...'}
+                {insight.text}
               </p>
             </div>
 
-            {/* Barra de progresso animada */}
-            {isAiStep && (
-              <div className="px-5 pb-4">
-                <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#415FF2] to-[#37D3A4] rounded-full"
-                    style={{
-                      width: `${((aiMsg + 1) / AI_INSIGHTS.length) * 100}%`,
-                      transition: 'width 3s ease-in-out',
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-[#6D727C] mt-2 text-right">
-                  {aiMsg + 1} de {AI_INSIGHTS.length} verificações
-                </p>
+            {/* Barra de progresso monotônica — nunca volta pro início */}
+            <div className="px-5 pb-4">
+              <div className="w-full bg-white/5 rounded-full h-1 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#415FF2] to-[#37D3A4] rounded-full"
+                  style={{
+                    width: `${((aiMsg + 1) / AI_INSIGHTS.length) * 100}%`,
+                    transition: 'width 3s ease-in-out',
+                  }}
+                />
               </div>
-            )}
+              <p className="text-xs text-[#6D727C] mt-2 text-right">
+                {isLastPhase ? 'Finalizando…' : `Etapa ${aiMsg + 1} de ${AI_INSIGHTS.length}`}
+              </p>
+            </div>
           </div>
 
           <div className="mt-6 text-center space-y-1.5">
